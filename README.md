@@ -119,12 +119,12 @@ usually get lost.
 ## Development
 
 ```bash
-uv sync --extra dev
-uv run pytest
-uv run pre-commit run -a
+python3 -m unittest discover -s tests
 claude plugin validate --strict .
 claude plugin eval . --scaffold --no-publish --allow-tools Edit Write Bash
 ```
+
+The tests use only the standard library, so there is nothing to install.
 
 The rules live in one file, `skills/scapegoat/SKILL.md`. The session hook
 prints that same file, so there is no second copy to keep in step.
@@ -132,9 +132,8 @@ prints that same file, so there is no second copy to keep in step.
 The guard is developed test first. A new refused or allowed command goes into
 `tests/test_guard.py` before `hooks/guard.py` changes.
 
-After a change, bump `version` in `.claude-plugin/plugin.json` and in
-`pyproject.toml`, since installed copies are pinned to it. A test keeps the
-two in step.
+After a change, bump `version` in `.claude-plugin/plugin.json`, since
+installed copies are pinned to it.
 
 ## Tests
 
@@ -162,5 +161,4 @@ hooks/hooks.json                  wires the session hook and the guard
 hooks/guard.py                    the command guard
 tests/                            unit tests for the guard and the wiring
 evals/                            behaviour cases for claude plugin eval
-pyproject.toml                    Python tooling
 ```
