@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "awk 'f>1; /^---$/{f++}' \"${CLAUDE_PLUGIN_ROOT}/skills/scapegoat/SKILL.md\"",
+            "timeout": 5,
+            "statusMessage": "Loading scapegoat..."
+          }
+        ]
+      }
+    ]
+  }
+}

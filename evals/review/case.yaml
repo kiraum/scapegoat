@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: review
+description: An uncommitted change that crosses eight hard lines, to be reported without edits.
+tags: [gates]
+context:
+  scaffold_script: fixture.sh

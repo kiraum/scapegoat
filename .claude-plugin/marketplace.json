@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "scapegoat",
+  "description": "Consistent code for Claude. Blame the goat for the nitpicks.",
+  "owner": {
+    "name": "kiraum",
+    "url": "https://github.com/kiraum"
+  },
+  "plugins": [
+    {
+      "name": "scapegoat",
+      "description": "Seven gates and a short list of hard lines, so the same nitpick is never said twice.",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}
