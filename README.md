@@ -163,16 +163,13 @@ It needs `python3` (3.9 or newer) on the PATH.
 
 ## Use
 
-It is on from the first prompt. A hook loads the rules at startup, on resume,
-after `/clear` and after a compaction, which is when rules usually get lost,
-and into every subagent.
+There is nothing to invoke. Install it and work as usual: the rules are loaded
+into every session and every subagent, and loaded again after `/clear` and
+after a compaction.
 
-| Say | Get |
-|---|---|
-| "tell me the plan", "wdyt", "do not change anything" | Numbered options and one recommendation. No file is touched. |
-| "check the git diff", or `/scapegoat:scapegoat review [range]` | One line per finding: `path:line: what is wrong, the fix`. |
-| "commit msg", or `/scapegoat:scapegoat commit` | One line, `type(scope): subject`, matched to the repo's log. |
-| "commit and push" | The bold capital ask with the exact command. Nothing runs until you reply yes. |
+What changes is what you no longer have to say. A question gets an answer and
+no edits. A finished change comes with what was checked and a one-line commit
+message. A write action gets the bold capital ask and waits for your yes.
 
 To switch it off, disable the plugin: `claude plugin disable scapegoat@scapegoat`.
 

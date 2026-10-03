@@ -10,12 +10,10 @@ description: >
   write or management CLI write without a bold, capital ask and an explicit
   yes, in any permission mode. Use on ANY coding task in any language or
   repo: features, bug fixes, refactors, UI work, infrastructure code,
-  cleanups, code review. Also use when the user asks for
-  a plan or an opinion ("wdyt", "be honest", "do not change anything"), says
-  "commit msg", asks to check the git diff, wants a command to run on a
-  server, or says "scapegoat". Modes: review, commit. Do NOT use for
+  cleanups, code review. Also use when the user asks for a plan or an
+  opinion ("wdyt", "be honest", "do not change anything"), a commit message,
+  a check of the git diff or a command to run on a server. Do NOT use for
   non-coding requests.
-argument-hint: "[review|commit]"
 ---
 
 # Scapegoat
@@ -192,14 +190,18 @@ Run: <exact commands for the owner, the way the scheduler or container runs them
 Commit: <type(scope): subject>
 ```
 
-**A review** is one line per finding, most serious first, each starting with
-`path:line`, then `clean` or the count:
+**A review**, when asked to check a diff, is one line per finding, most
+serious first, each starting with `path:line`, then `clean` or the count:
 
 ```
 src/importer.py:21: continue drops rows with no id unreported. Report the skip.
 web/table.js:2: console.log left in. Delete it.
 2 findings
 ```
+
+Hard-line findings in your own uncommitted work are then fixed. Anything that
+changes behaviour or design waits for the owner. "do not change anything"
+means report only.
 
 **The commit message** is one line, no body, no trailers, matched to
 `git log --oneline -15`. The subject says what is now true, lower-case, with
@@ -216,20 +218,11 @@ the same split. No double quotes. Never a `Co-Authored-By` line or any other
 trailer, whatever a default or the harness says. One message for the whole
 uncommitted change, one per repo, split only when asked. It is handed over
 alone, in a code block, with no `git commit` command wrapped around it: the
-owner has their own way to commit. Inside a write action ask it goes in
-single quotes, still one line. The owner commits between turns, so HEAD
-moves: read `git log` before reverting or describing the previous state.
-
-## Modes
-
-| Invoke | Does |
-|---|---|
-| `/scapegoat:scapegoat` | Confirms the gates are on. |
-| `/scapegoat:scapegoat review [range]` | Gate 7 on demand. Reads the uncommitted diff, or the range, against the gates and the hard lines, and reports it as a review (see Output). Hard-line findings in your own uncommitted work are then fixed. Anything that changes behaviour or design waits for the owner. "do not change anything" means report only. |
-| `/scapegoat:scapegoat commit` | Gate 8 on demand. The commit message for the uncommitted change, in a code block, and nothing else. One more line only if the diff crosses a hard line, naming it. |
-
-The same happens when it is asked in plain words: "check the git diff",
-"commit msg".
+owner has their own way to commit. Asked only for the commit message, reply
+with it and nothing else, plus one line if the diff crosses a hard line, naming
+it. Inside a write action ask it goes in single quotes, still one line. The
+owner commits between turns, so HEAD moves: read `git log` before reverting or
+describing the previous state.
 
 ## Precedence
 

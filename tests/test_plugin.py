@@ -47,7 +47,7 @@ class PluginTest(unittest.TestCase):
         """The rules live in one file, and the session hook prints its body."""
         printed = run_hook(hook_command("SessionStart"), {"hook_event_name": "SessionStart"}).stdout
         self.assertTrue(printed.startswith("# Scapegoat"))
-        self.assertNotIn("argument-hint", printed)
+        self.assertNotIn("name: scapegoat", printed)
 
     def test_a_subagent_gets_the_rules_as_added_context(self) -> None:
         """A subagent only receives context a hook hands over as JSON."""
