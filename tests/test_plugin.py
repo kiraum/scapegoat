@@ -6,7 +6,9 @@ import json
 import os
 import subprocess
 import unittest
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 SKIPPED_DIRS = {".git", "results", "__pycache__"}
@@ -14,30 +16,61 @@ TEXT_SUFFIXES = {".md", ".json", ".yaml", ".yml", ".py", ".sh", ".txt"}
 LONG_DASHES = (chr(0x2014), chr(0x2013))
 
 
-def hook_commands(event: str) -> list[str]:
-    """Return the shell commands the plugin registers for a hook event."""
-    hooks = json.loads((ROOT / "hooks" / "hooks.json").read_text(encoding="utf-8"))["hooks"]
-    return [hook["command"] for entry in hooks[event] for hook in entry["hooks"]]
+def hook_command(event: str, matcher: str = "") -> str:
+    """Return the one shell command registered for a hook event, picked by its matcher when there are several."""
+    hooks: dict[str, Any] = json.loads((ROOT / "hooks" / "hooks.json").read_text(encoding="utf-8"))["hooks"]
+    (entry,) = [entry for entry in hooks[event] if not matcher or entry.get("matcher") == matcher]
+    (hook,) = entry["hooks"]
+    command: str = hook["command"]
+    return command
+
+
+def run_hook(
+    command: str, event: Mapping[str, object], path: str = os.environ["PATH"]
+) -> subprocess.CompletedProcess[str]:
+    """Run a hook command the way Claude Code does: through a shell, with the event on stdin."""
+    environment = {**os.environ, "CLAUDE_PLUGIN_ROOT": str(ROOT), "PATH": path}
+    return subprocess.run(
+        ["/bin/sh", "-c", command],
+        input=json.dumps(event),
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
 
 class PluginTest(unittest.TestCase):
     """The wiring between the manifest, the hooks and the skill."""
 
-    def test_the_session_hook_prints_the_rules_without_the_frontmatter(self) -> None:
-        """The rules live in one file, and the hook prints its body."""
-        (command,) = hook_commands("SessionStart")
-        environment = {**os.environ, "CLAUDE_PLUGIN_ROOT": str(ROOT)}
-        printed = subprocess.run(
-            ["sh", "-c", command], env=environment, capture_output=True, text=True, check=True
-        ).stdout
-        self.assertTrue(printed.lstrip().startswith("# Scapegoat"))
+    def test_a_session_gets_the_rules_without_the_frontmatter(self) -> None:
+        """The rules live in one file, and the session hook prints its body."""
+        printed = run_hook(hook_command("SessionStart"), {"hook_event_name": "SessionStart"}).stdout
+        self.assertTrue(printed.startswith("# Scapegoat"))
         self.assertNotIn("argument-hint", printed)
 
-    def test_the_guard_hook_fails_closed(self) -> None:
-        """If the guard cannot run, the command is blocked rather than waved through."""
-        (command,) = hook_commands("PreToolUse")
-        self.assertIn("hooks/guard.py", command)
-        self.assertTrue(command.endswith("|| exit 2"))
+    def test_a_subagent_gets_the_rules_as_added_context(self) -> None:
+        """A subagent only receives context a hook hands over as JSON."""
+        printed = run_hook(hook_command("SubagentStart"), {"hook_event_name": "SubagentStart"}).stdout
+        output = json.loads(printed)["hookSpecificOutput"]
+        self.assertEqual(output["hookEventName"], "SubagentStart")
+        self.assertTrue(output["additionalContext"].startswith("# Scapegoat"))
+
+    def test_each_guard_is_wired_to_its_tools_and_fails_closed(self) -> None:
+        """If a guard cannot run, the call is blocked rather than waved through."""
+        wiring = {"Bash|mcp__.*": "hooks/guard.py", "Edit|Write|NotebookEdit": "hooks/edits.py"}
+        for matcher, script in wiring.items():
+            with self.subTest(matcher=matcher):
+                command = hook_command("PreToolUse", matcher)
+                self.assertIn(script, command)
+                self.assertTrue(command.endswith("|| exit 2"))
+
+    def test_a_missing_python_blocks_with_a_plain_message(self) -> None:
+        """Without python3 the guard cannot judge, so it says so and blocks."""
+        event = {"tool_name": "Bash", "tool_input": {"command": "ls"}}
+        result = run_hook(hook_command("PreToolUse", "Bash|mcp__.*"), event, path="/nonexistent")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("python3 is not on the PATH", result.stderr)
 
     def test_no_long_dash_in_the_repo(self) -> None:
         """The repo keeps its own rule: no long dashes in any text file."""

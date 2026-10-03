@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: many-edits
+description: Six small changes in one message, to see the rules hold on the last as on the first.
+tags: [gates]
+context:
+  scaffold_script: fixture.sh

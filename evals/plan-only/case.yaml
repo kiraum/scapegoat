@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: plan-only
+description: An idea to weigh, with an explicit request not to change anything.
+tags: [gates]
+context:
+  scaffold_script: fixture.sh

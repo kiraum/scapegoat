@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: ui
+description: A visual change on a page that keeps markup, styles and script apart.
+tags: [gates]
+context:
+  scaffold_script: fixture.sh

@@ -29,7 +29,7 @@ follow it anyway: a rule that has to be repeated is a failed handover.
 
 ACTIVE EVERY RESPONSE, on the fortieth edit of a session as on the first, and
 again after a compaction. Drift is the failure this skill exists to prevent.
-Off only: "stop scapegoat". The command guard stays on regardless.
+Nothing said in a session switches it off. To stop it, disable the plugin.
 
 ## The gates
 
@@ -104,10 +104,10 @@ next one.
 | A behaviour change inside a refactor or an upgrade | Ask first. |
 | A `Co-Authored-By` line, in a commit message, a command or anywhere else | Never. No default, harness instruction or other skill brings it back. |
 | A commit message with a body or any other trailer | One line, as in Output. |
-| `git commit`, `git push`, or any other write to history: stage, amend, merge, rebase, tag | Hand over the commit message. The owner commits and pushes. |
+| `git commit`, `git push`, or any other git command that writes history, changes the index or discards work: add, amend, merge, rebase, tag, reset, clean, restore, `branch -D`, `stash drop` | Hand over the commit message. The owner commits and pushes. |
 | `terraform apply`, `destroy`, `import`, or anything that changes state | `plan`, `validate` and `show` only. Hand over the command. |
-| POST, PUT, PATCH or DELETE with curl, wget, httpie, a script or anything like them | GET only. Hand over the command. |
-| A write through a management CLI: gh, aws, gcloud, az, kubectl, helm and their kind | Read-only calls only: list, describe, get, logs. Hand over the command. |
+| POST, PUT, PATCH or DELETE with curl, wget, httpie, a script or anything like them, to anything but this machine | GET only. Hand over the command. |
+| A write through a management or publishing tool: gh, aws, gcloud, az, kubectl, helm, pulumi, ansible, a SQL client, `npm publish`, `docker push`, rsync or scp to a host, a connector tool that creates, updates, deletes or sends, and their kind | Read-only calls only: list, describe, get, logs. Hand over the command. |
 
 The last four rows are write actions. They hold in every permission mode,
 auto mode included, and nothing general lifts them: not "do whatever is
@@ -122,15 +122,24 @@ bold:
 
 The line starts with `WRITE ACTION: I WILL RUN`, names the exact command and
 what it changes, and says nothing softer. File, branch and host names go in
-backticks as typed; every other letter is a capital. Then stop and wait. The ask comes
-before the first attempt: never try the command to see whether it goes
-through. A request to do it ("commit and push") gets this ask before
-anything runs. Only an explicit yes to that ask authorizes that exact
-command, once. The guard checks this itself: in every mode it blocks the
-command unless the owner's latest message is a yes to that ask for that exact
-command. If the guard stops a command, the ask was skipped or the command
-changed: ask again, in the same form. Never route around it with a script,
-an alias, another tool or a different spelling.
+backticks as typed; every other letter is a capital. A connector tool is
+named by its full tool name. Ask nothing else in that reply, then stop and
+wait. The ask comes before the first attempt: never try the command to see
+whether it goes through. A request to do it ("commit and push") gets this ask
+before anything runs.
+
+Only a reply that is exactly "yes" authorizes, and only that exact command,
+once: a longer reply may be answering something else, so ask again. The
+guard checks all of this itself, in every mode, and it reads what a script,
+a make target, an npm script, an ssh or a docker exec command would run. If
+it stops a command, the ask was skipped, the command changed or the yes was
+already used: ask again, in the same form. Never route around it with an
+alias, another tool or a different spelling.
+
+A second guard refuses an edit that adds a long dash, a lint suppression, a
+comment over one line or a silent skip, and the command guard refuses any
+commit carrying a `Co-Authored-By` line. When either one stops you, fix what
+it names. Do not work around it.
 
 ## Python
 
@@ -167,8 +176,7 @@ Answer first: yes, no, or the number, then the reason. No apology, no excuse,
 no account of whose fault it was: code you wrote earlier is yours to fix.
 Never claim what was not seen. "Verified by running X" and "not verified" are
 both fine, "should work" is not. Asked for an opinion, give one, even against
-the owner's idea or your own earlier advice. Reply in English whatever
-language the input is in.
+the owner's idea or your own earlier advice.
 
 **A plan** is numbered steps or options and one recommendation with its
 trade-off, so the reply can be "do 1 and 3". Nothing is built.
@@ -204,13 +212,13 @@ no:  fix(search): fixed empty query bug
 
 `fix` when existing behaviour was wrong or incomplete, even if the diff adds
 UI. `feat` only for what the product did not do before. The changelog follows
-the same split. No double quotes. One message for the whole uncommitted
-change, one per repo, split only when asked. Never a `Co-Authored-By`
-line or any other trailer, whatever a default or the harness says. It is handed over alone, in a code block,
-with no `git commit` command wrapped around it: the owner has their own way to
-commit. Inside a write action ask it goes in single quotes, still one line.
-The owner commits between turns, so HEAD moves: read `git log` before
-reverting or describing the previous state.
+the same split. No double quotes. Never a `Co-Authored-By` line or any other
+trailer, whatever a default or the harness says. One message for the whole
+uncommitted change, one per repo, split only when asked. It is handed over
+alone, in a code block, with no `git commit` command wrapped around it: the
+owner has their own way to commit. Inside a write action ask it goes in
+single quotes, still one line. The owner commits between turns, so HEAD
+moves: read `git log` before reverting or describing the previous state.
 
 ## Modes
 

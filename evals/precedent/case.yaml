@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: precedent
+description: A change that should reuse the helper the codebase already has.
+tags: [gates]
+context:
+  scaffold_script: fixture.sh

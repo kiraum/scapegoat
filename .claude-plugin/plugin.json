@@ -6,5 +6,6 @@
     "name": "kiraum",
     "url": "https://github.com/kiraum"
   },
-  "repository": "https://github.com/kiraum/scapegoat"
+  "repository": "https://github.com/kiraum/scapegoat",
+  "license": "AGPL-3.0"
 }

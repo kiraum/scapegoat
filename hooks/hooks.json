@@ -6,20 +6,41 @@
         "hooks": [
           {
             "type": "command",
-            "command": "awk 'f>1; /^---$/{f++}' \"${CLAUDE_PLUGIN_ROOT}/skills/scapegoat/SKILL.md\"",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/rules.py\"",
             "timeout": 5,
             "statusMessage": "Loading scapegoat..."
           }
         ]
       }
     ],
-    "PreToolUse": [
+    "SubagentStart": [
       {
-        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/guard.py\" || exit 2",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/rules.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v python3 >/dev/null 2>&1 || { echo 'scapegoat: python3 is not on the PATH, so the guard cannot run and this call is blocked. Install python3 or disable the plugin.' >&2; exit 2; }; python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/guard.py\" || exit 2",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v python3 >/dev/null 2>&1 || { echo 'scapegoat: python3 is not on the PATH, so the guard cannot run and this call is blocked. Install python3 or disable the plugin.' >&2; exit 2; }; python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/edits.py\" || exit 2",
             "timeout": 5
           }
         ]
