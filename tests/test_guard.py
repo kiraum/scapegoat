@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from types import ModuleType
@@ -23,7 +25,9 @@ def load_guard() -> ModuleType:
     return module
 
 
-verdict = load_guard().verdict
+GUARD_MODULE = load_guard()
+verdict = GUARD_MODULE.verdict
+authorized = GUARD_MODULE.authorized
 
 BLOCKED = [
     "git commit -m x",
@@ -51,6 +55,13 @@ BLOCKED = [
     'echo "result: $(terraform apply -auto-approve)"',
     "bash <<'EOF'\ngit push\nEOF",
     "ls\ngit push",
+    "G=/opt/homebrew/bin/git; $G add a.txt && $G commit -q -m x",
+    "G=/opt/homebrew/bin/git; ${G} push",
+    "export G=git; $G push",
+    "TF=terraform && $TF apply -auto-approve",
+    "$GIT commit -m x",
+    '"$GIT_BIN" push origin main',
+    "$TF apply",
     "terraform apply",
     "terraform apply -auto-approve",
     "terraform -chdir=env/prod apply",
@@ -153,6 +164,10 @@ ALLOWED = [
     "ls # git push",
     "cat > notes.md <<'EOF'\ngit commit -m x\nterraform apply\nEOF",
     "cat <<< word\ngit status",
+    "G=/opt/homebrew/bin/git; $G status --short; $G log --oneline -3",
+    "PY=python3; $PY -m unittest discover -s tests",
+    "$UV run pytest -q",
+    "$EDITOR notes.md",
     "terraform plan",
     "terraform plan -out=tf.plan",
     "terraform plan -var region=eu-west-1",
@@ -245,21 +260,53 @@ ALLOWED = [
 ]
 
 
+PUSH = "git push origin main"
+ASK = f"**WRITE ACTION: I WILL RUN `{PUSH}`. IT PUBLISHES 2 COMMITS TO THE REMOTE. REPLY YES TO AUTHORIZE.**"
+
+
+def human(text: str) -> dict[str, object]:
+    """Build a transcript entry for a message the owner typed."""
+    return {"type": "user", "isSidechain": False, "origin": {"kind": "human"}, "message": {"content": text}}
+
+
+def assistant(text: str) -> dict[str, object]:
+    """Build a transcript entry for text Claude wrote."""
+    return {"type": "assistant", "isSidechain": False, "message": {"content": [{"type": "text", "text": text}]}}
+
+
+def tool_result() -> dict[str, object]:
+    """Build the transcript entry a tool result leaves, which is a user entry nobody typed."""
+    return {"type": "user", "isSidechain": False, "origin": None, "message": {"content": [{"type": "tool_result"}]}}
+
+
+def notification(text: str) -> dict[str, object]:
+    """Build a transcript entry injected by the harness rather than typed."""
+    return {"type": "user", "origin": {"kind": "task-notification"}, "message": {"content": text}}
+
+
+def transcript(entries: list[dict[str, object]]) -> str:
+    """Write a session transcript to a temporary file and return its path."""
+    with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False, encoding="utf-8") as handle:
+        handle.write("\n".join(json.dumps(entry) for entry in entries) + "\n")
+    return handle.name
+
+
 def run_guard(payload: str) -> subprocess.CompletedProcess[str]:
     """Run the guard the way the hook does, with the event on stdin."""
     return subprocess.run([sys.executable, str(GUARD)], input=payload, capture_output=True, text=True, check=False)
 
 
-def event(tool: str, command: str) -> str:
+def event(tool: str, command: str, transcript_path: str = "") -> str:
     """Build the PreToolUse event Claude Code sends to a hook."""
-    return json.dumps({"hook_event_name": "PreToolUse", "tool_name": tool, "tool_input": {"command": command}})
+    fields = {"hook_event_name": "PreToolUse", "tool_name": tool, "tool_input": {"command": command}}
+    return json.dumps({**fields, "transcript_path": transcript_path})
 
 
 class VerdictTest(unittest.TestCase):
     """What the guard decides for a command line."""
 
-    def test_a_write_is_refused(self) -> None:
-        """Every write gets a reason, so the hook can block it."""
+    def test_a_write_is_flagged(self) -> None:
+        """Every write gets a reason, so the hook can stop it."""
         for command in BLOCKED:
             with self.subTest(command=command):
                 self.assertTrue(verdict(command))
@@ -270,24 +317,95 @@ class VerdictTest(unittest.TestCase):
             with self.subTest(command=command):
                 self.assertIsNone(verdict(command))
 
-    def test_the_reason_names_the_command(self) -> None:
-        """The refusal says which command it stopped."""
-        self.assertIn("terraform apply", verdict("cd infra && terraform apply -auto-approve") or "")
+    def test_the_reason_names_the_command_in_capitals(self) -> None:
+        """The reason opens with WRITE ACTION, quotes the command as typed, and is otherwise upper-case."""
+        reason = verdict("cd infra && terraform apply -auto-approve") or ""
+        self.assertTrue(reason.startswith("WRITE ACTION: `terraform apply`"))
+        self.assertTrue(re.sub(r"`[^`]*`", "", reason).isupper())
+
+
+class AuthorizedTest(unittest.TestCase):
+    """A write runs only when the owner's latest typed message is a yes to a bold capital ask for that command."""
+
+    def test_a_yes_to_the_ask_authorizes_that_command(self) -> None:
+        """The plain case, with the yes written a few ways."""
+        for reply in ("yes", "YES", "Yes, go ahead", "  yes"):
+            with self.subTest(reply=reply):
+                path = transcript([human("push it"), assistant("Two commits are ready.\n\n" + ASK), human(reply)])
+                self.assertTrue(authorized(path, PUSH))
+
+    def test_tool_traffic_after_the_yes_does_not_cancel_it(self) -> None:
+        """Tool results are user entries nobody typed, so the yes is still the latest message."""
+        path = transcript([assistant(ASK), human("yes"), assistant("Running it."), tool_result()])
+        self.assertTrue(authorized(path, "git  push   origin main"))
+
+    def test_anything_but_a_yes_does_not_authorize(self) -> None:
+        """No, a vague ok, or silence leave the write blocked."""
+        for reply in ("no", "ok", "do whatever is needed", "not yes"):
+            with self.subTest(reply=reply):
+                self.assertFalse(authorized(transcript([assistant(ASK), human(reply)]), PUSH))
+
+    def test_a_yes_covers_only_the_command_that_was_asked(self) -> None:
+        """A different command needs its own ask."""
+        path = transcript([assistant(ASK), human("yes")])
+        self.assertFalse(authorized(path, "git push --force origin main"))
+
+    def test_the_ask_must_be_bold_and_capital(self) -> None:
+        """A soft question, a lower-case ask or one without the bold markers does not count."""
+        weak = [
+            "Should I push to origin main?",
+            f"**Write action: I will run `{PUSH}`. It publishes 2 commits. Reply yes to authorize.**",
+            f"WRITE ACTION: I WILL RUN `{PUSH}`. IT PUBLISHES 2 COMMITS. REPLY YES TO AUTHORIZE.",
+        ]
+        for ask in weak:
+            with self.subTest(ask=ask):
+                self.assertFalse(authorized(transcript([assistant(ask), human("yes")]), PUSH))
+
+    def test_names_in_the_ask_go_in_backticks(self) -> None:
+        """A file or branch name keeps its case inside backticks; outside them every letter is a capital."""
+        command = "git commit -am 'fix(a): b'"
+        quoted = f"**WRITE ACTION: I WILL RUN `{command}`. IT COMMITS `a.txt` ON `main`. REPLY YES TO AUTHORIZE.**"
+        bare = f"**WRITE ACTION: I WILL RUN `{command}`. IT COMMITS a.txt ON main. REPLY YES TO AUTHORIZE.**"
+        self.assertTrue(authorized(transcript([assistant(quoted), human("yes")]), command))
+        self.assertFalse(authorized(transcript([assistant(bare), human("yes")]), command))
+
+    def test_an_old_yes_does_not_carry_over(self) -> None:
+        """Once the owner has typed something else, the earlier yes is spent."""
+        path = transcript([assistant(ASK), human("yes"), assistant("Pushed."), human("now fix the readme")])
+        self.assertFalse(authorized(path, PUSH))
+
+    def test_only_a_typed_message_counts(self) -> None:
+        """A yes that arrives in a harness notification is not the owner's."""
+        path = transcript([assistant(ASK), notification("yes")])
+        self.assertFalse(authorized(path, PUSH))
+
+    def test_no_transcript_means_no_authorization(self) -> None:
+        """Without a readable transcript nothing proves the owner said yes."""
+        self.assertFalse(authorized("/nonexistent/transcript.jsonl", PUSH))
 
 
 class HookTest(unittest.TestCase):
     """How the guard behaves when Claude Code runs it as a hook."""
 
-    def test_the_hook_blocks_with_exit_2_and_explains_on_stderr(self) -> None:
-        """Exit code 2 is what makes Claude Code refuse the tool call."""
-        result = run_guard(event("Bash", "git commit -m x"))
+    def test_the_hook_blocks_an_unauthorized_write_and_says_how_to_ask(self) -> None:
+        """Exit code 2 blocks the call in every permission mode, and stderr gives Claude the ask to make."""
+        result = run_guard(event("Bash", "git commit -m x", transcript([human("commit it")])))
         self.assertEqual(result.returncode, 2)
-        self.assertIn("git commit", result.stderr)
+        self.assertTrue(result.stderr.startswith("WRITE ACTION: `git commit` WRITES HISTORY. NOT AUTHORIZED."))
+        self.assertIn("**WRITE ACTION: I WILL RUN `git commit -m x`.", result.stderr)
+
+    def test_the_hook_lets_an_authorized_write_through(self) -> None:
+        """After a yes to the ask, the command goes on to the normal permission flow."""
+        result = run_guard(event("Bash", PUSH, transcript([assistant(ASK), human("yes")])))
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "")
+        self.assertEqual(result.stderr, "")
 
     def test_the_hook_lets_a_read_through(self) -> None:
         """A read exits 0 and says nothing."""
         result = run_guard(event("Bash", "git status"))
         self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "")
         self.assertEqual(result.stderr, "")
 
     def test_the_hook_ignores_other_tools(self) -> None:
@@ -297,5 +415,5 @@ class HookTest(unittest.TestCase):
     def test_the_hook_fails_loudly_on_input_it_cannot_read(self) -> None:
         """A broken event is an error, never a silent pass."""
         result = run_guard("not json")
-        self.assertNotIn(result.returncode, (0, 2))
+        self.assertNotEqual(result.returncode, 0)
         self.assertNotEqual(result.stderr, "")

@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""PreToolUse guard for Bash: refuses commands that write to git history, infrastructure, cloud or HTTP APIs."""
+"""PreToolUse guard for Bash: blocks a write to git, infra or an API unless the owner said yes to an ask for it."""
 
 from __future__ import annotations
 
+import itertools
 import json
 import os
 import re
 import shlex
 import sys
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 Check = Callable[[list[str]], Optional[str]]
 
@@ -37,9 +38,15 @@ LOOSE_WORD = re.compile(r"[();|&]+|[^\s();|&]+")
 HEREDOC = re.compile(r"(?<!<)<<(?!<)-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1")
 SUBSTITUTION = re.compile(r"\$\(([^()]*)\)|`([^`]*)`")
 SHELL_SCRIPT_FLAG = re.compile(r"-[A-Za-z]*c")
+ASK = re.compile(r"\*\*WRITE ACTION: I WILL RUN `([^`]+)`(?:`[^`]*`|[^a-z*`])*REPLY YES TO AUTHORIZE\.\*\*")
+YES = re.compile(r"\s*yes\b", re.I)
+VARIABLE = re.compile(r"\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?")
+DECLARATIONS = {"export", "local", "declare", "readonly", "typeset"}
 
 GIT_VALUE_OPTS = frozenset({"-C", "-c", "--git-dir", "--work-tree", "--namespace"})
 GIT_WRITES = {"commit", "commit-tree", "push", "merge", "rebase", "cherry-pick", "revert", "am", "pull"}
+
+UNMISTAKABLE_WRITES = GIT_WRITES | {"apply", "destroy", "import"}
 
 TF_READS = {"plan", "validate", "fmt", "show", "output", "providers", "version", "graph", "init", "get", "metadata"}
 TF_NESTED_READS = {"state": {"list", "show", "pull"}, "workspace": {"list", "show"}}
@@ -134,9 +141,9 @@ GH_VERB_READS = {"list", "view", "status", "diff", "checks", "watch", "download"
 GH_FIELD_OPTS = ("-f", "-F", "--field", "--raw-field", "--input")
 
 
-def refusal(what: str, why: str) -> str:
-    """Word a refusal the same way for every tool."""
-    return f"scapegoat guard: `{what}` {why}. Hand the command to the owner instead of running it."
+def write_action(what: str, why: str) -> str:
+    """Word the reason the same way for every tool: capitals, with the command as typed."""
+    return f"WRITE ACTION: `{what}` {why.upper()}."
 
 
 def positionals(args: list[str], value_opts: frozenset[str] = frozenset()) -> list[str]:
@@ -198,9 +205,9 @@ def request_method(args: list[str], long_name: str) -> str:
 
 
 def check_git(args: list[str]) -> Optional[str]:
-    """Refuse the git commands that write a commit or publish one."""
+    """Flag the git commands that write a commit or publish one."""
     sub = (positionals(args, GIT_VALUE_OPTS) or [""])[0]
-    return refusal(f"git {sub}", "writes history, which the owner does") if sub in GIT_WRITES else None
+    return write_action(f"git {sub}", "writes history") if sub in GIT_WRITES else None
 
 
 def nested_check(
@@ -213,30 +220,30 @@ def nested_check(
     """Build a check for a CLI with subcommands: only the listed read-only ones pass."""
 
     def check(args: list[str]) -> Optional[str]:
-        """Refuse a subcommand that is not on the read-only list."""
+        """Flag a subcommand that is not on the read-only list."""
         words = positionals(args, value_opts)
         if not words:
             return None
         sub = words[0]
         nested = words[1] if len(words) > 1 else ""
         if sub in nested_reads:
-            return None if nested in nested_reads[sub] else refusal(f"{tool} {sub} {nested}".strip(), why)
-        return None if sub in reads else refusal(f"{tool} {sub}", why)
+            return None if nested in nested_reads[sub] else write_action(f"{tool} {sub} {nested}".strip(), why)
+        return None if sub in reads else write_action(f"{tool} {sub}", why)
 
     return check
 
 
 def check_terraform(args: list[str]) -> Optional[str]:
-    """Refuse every terraform command that can change infrastructure or state."""
+    """Flag every terraform command that can change infrastructure or state."""
     words = [word for word in args if word not in TERRAGRUNT_PREFIXES]
     migrates = [word for word in words if word.lstrip("-").startswith(TF_INIT_WRITES)]
     if "init" in positionals(words)[:1] and migrates:
-        return refusal(f"terraform init {migrates[0]}", "moves state")
+        return write_action(f"terraform init {migrates[0]}", "moves state")
     return nested_check("terraform", TF_READS, TF_NESTED_READS, why="changes infrastructure or state")(words)
 
 
 def check_curl(args: list[str]) -> Optional[str]:
-    """Refuse curl when it sends a write method or a request body."""
+    """Flag curl when it sends a write method or a request body."""
     method = request_method(args, "--request")
     options = [short_option(word) for word in args]
     uploads = [word for word, (_, letter, _) in zip(args, options) if letter in CURL_BODY_LETTERS]
@@ -244,33 +251,33 @@ def check_curl(args: list[str]) -> Optional[str]:
     as_query = "--get" in args or any("G" in plain for plain, _, _ in options)
     only_data = all(word.startswith(("-d", "--data")) or "d" in short_option(word)[1] for word in uploads)
     if method in WRITE_METHODS:
-        return refusal(f"curl -X {method}", "writes to an HTTP API")
+        return write_action(f"curl -X {method}", "writes to an HTTP API")
     if uploads and not (method in READ_METHODS or (as_query and only_data)):
-        return refusal(f"curl {uploads[0]}", "sends a request body, which writes to an HTTP API")
+        return write_action(f"curl {uploads[0]}", "sends a request body, which writes to an HTTP API")
     return None
 
 
 def check_wget(args: list[str]) -> Optional[str]:
-    """Refuse wget when it sends a write method or a request body."""
+    """Flag wget when it sends a write method or a request body."""
     method = option_value(args, "--method").upper()
     bodies = [word for word in args if word.startswith(WGET_BODY_OPTS)]
     if method in WRITE_METHODS or bodies:
-        return refusal(f"wget {(bodies or ['--method=' + method])[0]}", "writes to an HTTP API")
+        return write_action(f"wget {(bodies or ['--method=' + method])[0]}", "writes to an HTTP API")
     return None
 
 
 def check_httpie(args: list[str]) -> Optional[str]:
-    """Refuse httpie when it names a write method or carries data items, which make it POST."""
+    """Flag httpie when it names a write method or carries data items, which make it POST."""
     words = positionals(args)
     method = words[0].upper() if words else ""
     data = [word for word in words if HTTPIE_DATA.fullmatch(word)]
     if method in WRITE_METHODS or (data and method not in READ_METHODS):
-        return refusal(f"http {method or data[0]}", "writes to an HTTP API")
+        return write_action(f"http {method or data[0]}", "writes to an HTTP API")
     return None
 
 
 def check_aws(args: list[str]) -> Optional[str]:
-    """Refuse every aws operation that is not a read."""
+    """Flag every aws operation that is not a read."""
     words = positionals(args, AWS_VALUE_OPTS)
     if len(words) < 2:
         return None
@@ -279,26 +286,26 @@ def check_aws(args: list[str]) -> Optional[str]:
         allowed = operation in AWS_SERVICE_READS[service]
     else:
         allowed = bool(AWS_READ.fullmatch(operation))
-    return None if allowed else refusal(f"aws {service} {operation}", "is not a read-only call")
+    return None if allowed else write_action(f"aws {service} {operation}", "is not a read-only call")
 
 
 def verb_check(tool: str) -> Check:
     """Build a check for a CLI whose commands end in a verb, such as gcloud or az."""
 
     def check(args: list[str]) -> Optional[str]:
-        """Refuse a command that names a write verb, or no read verb at all."""
+        """Flag a command that names a write verb, or no read verb at all."""
         named = strict_positionals(args)
         writes = [word for word in args if not word.startswith("-") and VERB_WRITE.fullmatch(word)]
         reads = [word for word in named if VERB_READ.fullmatch(word)]
         if writes or (named and not reads):
-            return refusal(f"{tool} {' '.join(named[:4])}".strip(), "is not a read-only command")
+            return write_action(f"{tool} {' '.join(named[:4])}".strip(), "is not a read-only command")
         return None
 
     return check
 
 
 def check_gh(args: list[str]) -> Optional[str]:
-    """Refuse every gh command that changes something on GitHub."""
+    """Flag every gh command that changes something on GitHub."""
     words = positionals(args, GH_VALUE_OPTS)
     if not words:
         return None
@@ -312,7 +319,7 @@ def check_gh(args: list[str]) -> Optional[str]:
         allowed = verb == "status"
     else:
         allowed = group in GH_GROUP_READS or verb in GH_VERB_READS
-    return None if allowed else refusal(f"gh {group} {verb}".strip(), "is not a read-only command")
+    return None if allowed else write_action(f"gh {group} {verb}".strip(), "is not a read-only command")
 
 
 CHECKS: dict[str, Check] = {
@@ -363,12 +370,32 @@ def shell_script(args: list[str]) -> Optional[str]:
     return args[flags[0] + 1] if flags and flags[0] + 1 < len(args) else None
 
 
+def check_unresolved(program: str, args: list[str]) -> Optional[str]:
+    """Flag a program held in a variable the guard cannot resolve, when its subcommand is an unmistakable write."""
+    sub = (positionals(args) or [""])[0]
+    return write_action(f"{program} {sub}", "runs a write through a variable") if sub in UNMISTAKABLE_WRITES else None
+
+
+def assignments(words: list[str]) -> dict[str, str]:
+    """Return the variables a command sets with leading NAME=value words, with or without export."""
+    plain = words[1:] if words and words[0] in DECLARATIONS else words
+    leading = itertools.takewhile(ASSIGNMENT.fullmatch, plain)
+    return {name: value for name, _, value in (word.partition("=") for word in leading)}
+
+
+def expand(words: list[str], known: dict[str, str]) -> list[str]:
+    """Replace the variables set earlier on the same command line with their values."""
+    return [VARIABLE.sub(lambda match: known.get(match.group(1), match.group(0)), word) for word in words]
+
+
 def check_segment(words: list[str]) -> Optional[str]:
-    """Return why one simple command is refused, or None when it is read-only."""
+    """Return why one simple command is a write action, or None when it is read-only."""
     command = unwrap(words)
     if not command:
         return None
     program, args = os.path.basename(command[0]), command[1:]
+    if program.startswith("$"):
+        return check_unresolved(program, args)
     script = shell_script(args) if program in SHELLS else None
     if script is not None:
         return verdict(script)
@@ -419,20 +446,75 @@ def split_segments(command: str) -> list[list[str]]:
 
 
 def verdict(command: str) -> Optional[str]:
-    """Return why a shell line is refused, or None when every command in it is read-only."""
+    """Return why a shell line is a write action, or None when every command in it is read-only."""
     text = strip_heredocs(command.replace("\\\n", " "))
-    reasons = [check_segment(segment) for segment in split_segments(text.replace("\n", " ; "))]
+    known: dict[str, str] = {}
+    reasons: list[Optional[str]] = []
+    for segment in split_segments(text.replace("\n", " ; ")):
+        words = expand(segment, known)
+        known.update(assignments(words))
+        reasons.append(check_segment(words))
     reasons += [verdict(inner or quoted) for inner, quoted in SUBSTITUTION.findall(text)]
     return next((reason for reason in reasons if reason), None)
 
 
+def one_line(command: str) -> str:
+    """Collapse a command to one line with single spaces, the form it has in an ask."""
+    return " ".join(command.split())
+
+
+def entry_text(entry: dict[str, Any]) -> str:
+    """Return the text a transcript entry carries, leaving out tool calls and tool results."""
+    content = entry.get("message", {}).get("content", "")
+    if isinstance(content, str):
+        return content
+    return "\n".join(part.get("text", "") for part in content if isinstance(part, dict) and part.get("type") == "text")
+
+
+def read_transcript(path: str) -> list[dict[str, Any]]:
+    """Return the main conversation's entries, or none when the transcript cannot be read."""
+    try:
+        with open(path, encoding="utf-8") as handle:
+            lines = handle.read().splitlines()
+    except OSError as error:
+        print(f"scapegoat guard: no transcript to check for a yes: {error}", file=sys.stderr)
+        return []
+    entries = [json.loads(line) for line in lines if line.strip()]
+    return [entry for entry in entries if not entry.get("isSidechain")]
+
+
+def authorized(transcript_path: str, command: str) -> bool:
+    """Tell whether the owner's latest typed message is a yes to a bold capital ask for exactly this command."""
+    entries = read_transcript(transcript_path)
+    typed = [
+        index
+        for index, entry in enumerate(entries)
+        if entry.get("type") == "user" and (entry.get("origin") or {}).get("kind") == "human"
+    ]
+    if not typed or not YES.match(entry_text(entries[typed[-1]])):
+        return False
+    turn_start = typed[-2] + 1 if len(typed) > 1 else 0
+    said = "\n".join(entry_text(entry) for entry in entries[turn_start : typed[-1]] if entry.get("type") == "assistant")
+    return one_line(command) in [one_line(asked) for asked in ASK.findall(said)]
+
+
+def blocked(reason: str, command: str) -> str:
+    """Word the block for Claude: what was stopped, and the exact ask that would authorize it."""
+    ask = (
+        f"**WRITE ACTION: I WILL RUN `{one_line(command)}`. IT <WHAT IT CHANGES, AND WHERE>. REPLY YES TO AUTHORIZE.**"
+    )
+    how = "ASK THE OWNER FIRST, AS THE LAST LINE OF YOUR REPLY, THEN STOP"
+    form = "NAMES GO IN BACKTICKS, EVERY OTHER LETTER IS A CAPITAL."
+    return f"{reason} NOT AUTHORIZED. {how}: {ask} {form}"
+
+
 def main() -> int:
-    """Read the PreToolUse event from stdin and refuse a Bash command that writes."""
+    """Read the PreToolUse event from stdin and block a Bash write the owner has not said yes to."""
     event = json.load(sys.stdin)
     command = event.get("tool_input", {}).get("command", "") if event.get("tool_name") == "Bash" else ""
     reason = verdict(command) if command else None
-    if reason:
-        print(reason, file=sys.stderr)
+    if reason and not authorized(event.get("transcript_path", ""), command):
+        print(blocked(reason, command), file=sys.stderr)
         return 2
     return 0
 

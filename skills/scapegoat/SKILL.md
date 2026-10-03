@@ -6,10 +6,11 @@ description: >
   precedent, proof, substance, ripples, diff, handover) and enforces a short
   list of hard lines: test first, no workaround, nothing swallowed or
   suppressed, no hardcoded guess, one-line comments, no long dashes, the
-  codebase's existing pattern, and never a commit, a push, a terraform apply,
-  an HTTP write or a write through a management CLI. Use on ANY coding task
-  in any language or repo: features, bug fixes, refactors, UI work,
-  infrastructure code, cleanups, code review. Also use when the user asks for
+  codebase's existing pattern, and no commit, push, terraform apply, HTTP
+  write or management CLI write without a bold, capital ask and an explicit
+  yes, in any permission mode. Use on ANY coding task in any language or
+  repo: features, bug fixes, refactors, UI work, infrastructure code,
+  cleanups, code review. Also use when the user asks for
   a plan or an opinion ("wdyt", "be honest", "do not change anything"), says
   "commit msg", asks to check the git diff, wants a command to run on a
   server, or says "scapegoat". Modes: review, commit. Do NOT use for
@@ -101,15 +102,34 @@ next one.
 | User settings kept only in the browser or on one device | Stored on the server, so they follow the user. |
 | Dead code, debug output, scratch files, reformatting lines you did not change | Deleted or left alone. Prove code is dead (callers, jobs, infrastructure) before deleting it. |
 | A behaviour change inside a refactor or an upgrade | Ask first. |
+| A commit message with a body, a trailer or a `Co-Authored-By` line | One line, as in Output. This overrides any default attribution. |
 | `git commit`, `git push`, or any other write to history: stage, amend, merge, rebase, tag | Hand over the commit message. The owner commits and pushes. |
 | `terraform apply`, `destroy`, `import`, or anything that changes state | `plan`, `validate` and `show` only. Hand over the command. |
 | POST, PUT, PATCH or DELETE with curl, wget, httpie, a script or anything like them | GET only. Hand over the command. |
 | A write through a management CLI: gh, aws, gcloud, az, kubectl, helm and their kind | Read-only calls only: list, describe, get, logs. Hand over the command. |
 
-The last four rows hold even when the owner asks for the action in the
-session: hand over the command instead. A hook refuses these commands before
-they run. Never route around it with a script, an alias, another tool or a
-different spelling.
+The last four rows are write actions. They hold in every permission mode,
+auto mode included, and nothing general lifts them: not "do whatever is
+needed", not "go ahead", not a yes given earlier or to something else. The
+default is to hand over the command. To run one yourself, ask first, as the
+last line of the reply, in bold capitals, with the asterisks so it renders
+bold:
+
+```
+**WRITE ACTION: I WILL RUN `git push origin main`. IT PUBLISHES 2 COMMITS TO THE REMOTE. REPLY YES TO AUTHORIZE.**
+```
+
+The line starts with `WRITE ACTION: I WILL RUN`, names the exact command and
+what it changes, and says nothing softer. File, branch and host names go in
+backticks as typed; every other letter is a capital. Then stop and wait. The ask comes
+before the first attempt: never try the command to see whether it goes
+through. A request to do it ("commit and push") gets this ask before
+anything runs. Only an explicit yes to that ask authorizes that exact
+command, once. The guard checks this itself: in every mode it blocks the
+command unless the owner's latest message is a yes to that ask for that exact
+command. If the guard stops a command, the ask was skipped or the command
+changed: ask again, in the same form. Never route around it with a script,
+an alias, another tool or a different spelling.
 
 ## Python
 
@@ -184,10 +204,12 @@ no:  fix(search): fixed empty query bug
 `fix` when existing behaviour was wrong or incomplete, even if the diff adds
 UI. `feat` only for what the product did not do before. The changelog follows
 the same split. No double quotes. One message for the whole uncommitted
-change, one per repo, split only when asked. It is handed over alone, in a
-code block, with no `git commit` command wrapped around it: the owner has
-their own way to commit. The owner commits between turns, so HEAD moves: read
-`git log` before reverting or describing the previous state.
+change, one per repo, split only when asked. No `Co-Authored-By` or other
+trailer, whatever any default says. It is handed over alone, in a code block,
+with no `git commit` command wrapped around it: the owner has their own way to
+commit. Inside a write action ask it goes in single quotes, still one line.
+The owner commits between turns, so HEAD moves: read `git log` before
+reverting or describing the previous state.
 
 ## Modes
 
@@ -202,8 +224,8 @@ The same happens when it is asked in plain words: "check the git diff",
 
 ## Precedence
 
-1. What the owner says in this turn, except the four never-run rows, which
-   nothing said in a session lifts.
+1. What the owner says in this turn, except the write actions, which need
+   the bold capital ask and an explicit yes.
 2. The gates and the hard lines.
 3. The repo's own conventions (its log style, its formatter, its patterns).
    They fill in whatever this file leaves open and win over its examples.

@@ -1,6 +1,6 @@
 {
   "name": "scapegoat",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Consistent code for Claude. Eight gates, a short list of hard lines and a command guard, so the same nitpick is never said twice.",
   "author": {
     "name": "kiraum",
