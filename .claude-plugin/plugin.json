@@ -1,7 +1,7 @@
 {
   "name": "scapegoat",
-  "version": "0.1.0",
-  "description": "Consistent code for Claude. Seven gates and a short list of hard lines, so the same nitpick is never said twice.",
+  "version": "0.2.0",
+  "description": "Consistent code for Claude. Eight gates, a short list of hard lines and a command guard, so the same nitpick is never said twice.",
   "author": {
     "name": "kiraum",
     "url": "https://github.com/kiraum"

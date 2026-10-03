@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "scapegoat",
-      "description": "Seven gates and a short list of hard lines, so the same nitpick is never said twice.",
+      "description": "Eight gates, a short list of hard lines and a command guard, so the same nitpick is never said twice.",
       "source": "./",
       "category": "productivity"
     }
