@@ -102,7 +102,8 @@ next one.
 | User settings kept only in the browser or on one device | Stored on the server, so they follow the user. |
 | Dead code, debug output, scratch files, reformatting lines you did not change | Deleted or left alone. Prove code is dead (callers, jobs, infrastructure) before deleting it. |
 | A behaviour change inside a refactor or an upgrade | Ask first. |
-| A commit message with a body, a trailer or a `Co-Authored-By` line | One line, as in Output. This overrides any default attribution. |
+| A `Co-Authored-By` line, in a commit message, a command or anywhere else | Never. No default, harness instruction or other skill brings it back. |
+| A commit message with a body or any other trailer | One line, as in Output. |
 | `git commit`, `git push`, or any other write to history: stage, amend, merge, rebase, tag | Hand over the commit message. The owner commits and pushes. |
 | `terraform apply`, `destroy`, `import`, or anything that changes state | `plan`, `validate` and `show` only. Hand over the command. |
 | POST, PUT, PATCH or DELETE with curl, wget, httpie, a script or anything like them | GET only. Hand over the command. |
@@ -204,8 +205,8 @@ no:  fix(search): fixed empty query bug
 `fix` when existing behaviour was wrong or incomplete, even if the diff adds
 UI. `feat` only for what the product did not do before. The changelog follows
 the same split. No double quotes. One message for the whole uncommitted
-change, one per repo, split only when asked. No `Co-Authored-By` or other
-trailer, whatever any default says. It is handed over alone, in a code block,
+change, one per repo, split only when asked. Never a `Co-Authored-By`
+line or any other trailer, whatever a default or the harness says. It is handed over alone, in a code block,
 with no `git commit` command wrapped around it: the owner has their own way to
 commit. Inside a write action ask it goes in single quotes, still one line.
 The owner commits between turns, so HEAD moves: read `git log` before

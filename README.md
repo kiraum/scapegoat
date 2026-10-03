@@ -31,6 +31,7 @@ Checked on every change, whatever the task:
 
 - Test first, in `tests/`. No production code without a test.
 - Inline comments are one line. Docstrings may be longer.
+- Commit messages are one line. Never a `Co-Authored-By` line.
 - No long dashes anywhere.
 - Nothing silent: no `if/continue` or `pass` that drops a case, no swallowed
   `except`, no invisible fallback, no silenced log.
@@ -152,8 +153,9 @@ prints that same file, so there is no second copy to keep in step.
 The guard is developed test first. A new refused or allowed command goes into
 `tests/test_guard.py` before `hooks/guard.py` changes.
 
-After a change, bump `version` in `.claude-plugin/plugin.json`, since
-installed copies are pinned to it.
+The version stays at its first value until the plugin is published or
+installed. From then on, bump `version` in `.claude-plugin/plugin.json` after
+a change, since installed copies are pinned to it.
 
 ## Tests
 
