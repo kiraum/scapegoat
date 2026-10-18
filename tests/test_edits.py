@@ -102,6 +102,18 @@ class FindingsTest(unittest.TestCase):
         text = "for row in rows:\n    if not row:\n        report.skip(row)\n        continue\n"
         self.assertEqual(findings("app.py", "", text), [])
 
+    def test_the_word_pass_in_a_comment_or_a_string_is_not_a_skip(self) -> None:
+        """Only a bare pass or continue as the body counts, not the word somewhere on the condition's line."""
+        texts = [
+            "if cdi and not copy:  # a copy is served, never stored: the warmer must ask again on its next pass\n"
+            "    store(cdi)\n",
+            "if x:  # note: pass it on\n    y = 1\n",
+            'if msg == "a: pass":\n    y = 1\n',
+        ]
+        for text in texts:
+            with self.subTest(text=text):
+                self.assertEqual(findings("app.py", "", text), [])
+
 
 class HookTest(unittest.TestCase):
     """How the edit guard behaves when Claude Code runs it as a hook."""

@@ -14,7 +14,11 @@ SUPPRESSION = re.compile(
     r"#\s*noqa\b|#\s*pylint:\s*disable|#\s*type:\s*ignore|eslint-disable|@ts-ignore|@ts-nocheck|//\s*nolint|#\s*nosec\b",
     re.I,
 )
-SILENT_SKIP = re.compile(r"^[ \t]*(?:if|elif|except)\b[^\n]*:[ \t]*(?:#[^\n]*)?(?:\n[ \t]*)?(?:pass|continue)\b", re.M)
+SILENT_SKIP = re.compile(
+    r"^[ \t]*(?:if|elif|except)\b[^\n#]*:[ \t]*"
+    r"(?:(?:#[^\n]*)?\n[ \t]*)?(?:pass|continue)[ \t]*(?:#[^\n]*)?$",
+    re.M,
+)
 PYTHON_SUFFIXES = {".py", ".pyi"}
 COMMENT_MARKERS = {
     **{suffix: "#" for suffix in (".py", ".pyi", ".sh", ".bash", ".zsh", ".tf", ".rb")},
