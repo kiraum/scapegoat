@@ -180,7 +180,7 @@ The rules live in one file, `skills/scapegoat/SKILL.md`. The hook prints that sa
 
 The guards are developed test first. A new command or pattern goes into `tests/` before `hooks/` changes.
 
-Bump `version` in `.claude-plugin/plugin.json` after a change, since installed copies are pinned to it. `.github/workflows/tests.yml` runs the unit tests on every push and pull request.
+Installed copies are pinned to `version` in `.claude-plugin/plugin.json`, so a change reaches them only when it is bumped. A bump is a release: in the same change, the `Unreleased` entries in `CHANGELOG.md` move under that number, and the tag carries it too. `.github/workflows/tests.yml` runs the unit tests on every push and pull request.
 
 ## Tests
 

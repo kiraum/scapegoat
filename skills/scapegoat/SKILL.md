@@ -112,7 +112,7 @@ Run: <exact commands for the owner, the way the scheduler or container runs them
 Commit: <type(scope): subject>
 MR: <type(scope): subject>
 <the description, three lines at most>
-Tag: <the next tag, should the owner want to release>
+Tag: <the commands that create and push the next tag>
 ```
 
 **A review**, when asked to check a diff, is one line per finding, most serious first, each starting with `path:line`, then `clean` or the count:
@@ -148,7 +148,9 @@ no:  fix(search): fixed empty query bug
 
 One line per change, worded like a commit subject: what is now true, with no type prefix. It is written for the person who uses the project, who may not be an engineer: no module, function or file names, only what they type or see, such as a command or a flag. Only what a user would notice goes in: no refactor, no test, no chore. A removal or a breaking change says so in its first word. Nothing is logged that did not ship in the diff.
 
-**The tag** is suggested in every handover and never created: the owner tags. Read `git tag -l --sort=-v:refname` and keep the scheme the tags already use. The changes since the last tag pick the number, as in semantic versioning: a `feat` raises the minor and resets the patch (`v1.4.2` gives `v1.5.0`), anything less raises the patch (`v1.4.3`), and a breaking change is named next to the suggestion so the owner picks the major. With no tag yet, suggest the version the project's version file carries, or `v0.1.0` when it has none. When the owner says to release, the `Unreleased` entries move under a section for that tag with today's date, `Unreleased` stays on top, empty, and the version file is set to the same number.
+**The version** is one number in three places that always agree: the project's version file, the git tag and the changelog section. The version file is wherever the project already declares it: `pyproject.toml`, `package.json`, `Cargo.toml`, a plugin manifest, a `VERSION` file, a `__version__`, or the tag alone when the build reads it from git. They change together and only at a release: never bump the version file and leave its changes under `Unreleased`, and never tag a number the version file does not carry. A change that has to bump the version to ship is a release.
+
+**The tag** is suggested in every handover and never created: the owner tags. It is handed over as the exact commands to run, in a code block, in the order to run them, with no prose to decode. Read `git tag -l --sort=-v:refname` and keep the scheme the tags already use, with or without the `v`. The changes since the last tag pick the number, as in semantic versioning: a `feat` raises the minor and resets the patch (`v1.4.2` gives `v1.5.0`), anything less raises the patch (`v1.4.3`), and a breaking change is named next to the suggestion so the owner picks the major. With no tag yet, suggest the number the version file carries, or `v0.1.0` when there is none. When the version file and the last tag disagree, say so before suggesting anything. When the owner says to release, the `Unreleased` entries move under a section for that number with today's date, `Unreleased` stays on top, empty, and the version file is set to the same number in the same change.
 
 ## Precedence
 
