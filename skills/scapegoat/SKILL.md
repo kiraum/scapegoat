@@ -108,12 +108,14 @@ Answer first: yes, no, or the number, then the reason. No apology, no excuse, no
 Checked: <the tests and checks that were run, and what they showed>
 Not verified: <what could not be run, and how to check it>
 Risk: <what this can break, after looking>
-Run: <exact commands for the owner, the way the scheduler or container runs them>
+Run: <exact commands for the owner, the way the scheduler or container runs them, in the order they work>
 Commit: <type(scope): subject>
 MR: <type(scope): subject>
 <the description, three lines at most>
 Tag: <the commands that create and push the next tag>
 ```
+
+Commands under `Run` and `Tag` that only work after another step (a merge, a deploy, a release) go in their own block, labelled with that step. Never list a command at a point where it would do nothing.
 
 **A review**, when asked to check a diff, is one line per finding, most serious first, each starting with `path:line`, then `clean` or the count:
 
