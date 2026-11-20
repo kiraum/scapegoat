@@ -161,6 +161,39 @@ claude --plugin-dir /path/to/scapegoat
 
 It needs `python3` (3.9 or newer) on the PATH.
 
+### Antigravity (agy)
+
+`agy` installs from a directory and converts the Claude Code plugin as it
+goes. Point it at the copy Claude Code already keeps, or at a local checkout:
+
+```bash
+agy plugin install ~/.claude/plugins/marketplaces/scapegoat
+agy plugin list
+```
+
+The list shows `scapegoat (enabled)` with one skill and one hook. The
+installed copy is a snapshot: after a plugin update, run the install again.
+
+### Codex
+
+`codex` reads the same marketplace file as Claude Code:
+
+```bash
+codex plugin marketplace add kiraum/scapegoat
+codex plugin add scapegoat@scapegoat
+codex plugin list
+```
+
+From a local checkout, give `marketplace add` the path instead. After a
+plugin update, run `codex plugin marketplace upgrade`.
+
+### What carries over
+
+The skill installs in both. The two guards are written against Claude Code: its
+tool names (`Bash`, `Edit`, `Write`) and its session transcript, where the
+typed yes is read. They are not tested on `agy` or `codex`, so there the
+hard lines rest on the written rule until they are.
+
 ## Use
 
 There is nothing to invoke. Install it and work as usual: the rules are loaded
