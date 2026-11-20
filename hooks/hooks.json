@@ -6,7 +6,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/rules.py\"",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/rules.py\" 1",
+            "timeout": 5,
+            "statusMessage": "Loading scapegoat..."
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/rules.py\" 2",
             "timeout": 5,
             "statusMessage": "Loading scapegoat..."
           }
@@ -18,7 +24,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/rules.py\"",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/rules.py\" 1",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/rules.py\" 2",
             "timeout": 5
           }
         ]

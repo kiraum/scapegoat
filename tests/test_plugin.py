@@ -16,13 +16,19 @@ TEXT_SUFFIXES = {".md", ".json", ".yaml", ".yml", ".py", ".sh", ".txt"}
 LONG_DASHES = (chr(0x2014), chr(0x2013))
 
 
-def hook_command(event: str, matcher: str = "") -> str:
-    """Return the one shell command registered for a hook event, picked by its matcher when there are several."""
+HOOK_OUTPUT_CAP = 10_000
+
+
+def hook_commands(event: str, matcher: str = "") -> list[str]:
+    """Return the shell commands registered for a hook event, picked by its matcher when there are several."""
     hooks: dict[str, Any] = json.loads((ROOT / "hooks" / "hooks.json").read_text(encoding="utf-8"))["hooks"]
     (entry,) = [entry for entry in hooks[event] if not matcher or entry.get("matcher") == matcher]
-    (hook,) = entry["hooks"]
-    command: str = hook["command"]
-    return command
+    return [hook["command"] for hook in entry["hooks"]]
+
+
+def hook_command(event: str, matcher: str = "") -> str:
+    """Return the first shell command registered for a hook event."""
+    return hook_commands(event, matcher)[0]
 
 
 def run_hook(
@@ -55,6 +61,19 @@ class PluginTest(unittest.TestCase):
         output = json.loads(printed)["hookSpecificOutput"]
         self.assertEqual(output["hookEventName"], "SubagentStart")
         self.assertTrue(output["additionalContext"].startswith("# Scapegoat"))
+
+    def test_the_rules_arrive_whole_in_pieces_under_the_hook_output_cap(self) -> None:
+        """Claude Code cuts a hook output over 10,000 characters down to a preview, so no piece may reach it."""
+        skill = (ROOT / "skills" / "scapegoat" / "SKILL.md").read_text(encoding="utf-8")
+        for event in ("SessionStart", "SubagentStart"):
+            with self.subTest(event=event):
+                printed = [run_hook(command, {"hook_event_name": event}).stdout for command in hook_commands(event)]
+                if event == "SubagentStart":
+                    printed = [json.loads(text)["hookSpecificOutput"]["additionalContext"] for text in printed]
+                self.assertTrue(all(0 < len(text) < HOOK_OUTPUT_CAP for text in printed), [len(t) for t in printed])
+                delivered = "\n".join(printed)
+                for line in skill.split("\n---\n", 1)[1].splitlines():
+                    self.assertIn(line, delivered)
 
     def test_each_guard_is_wired_to_its_tools_and_fails_closed(self) -> None:
         """If a guard cannot run, the call is blocked rather than waved through."""
