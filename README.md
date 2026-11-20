@@ -6,8 +6,8 @@ A Claude Code plugin that holds every change to one standard, in any project,
 so the same correction is never typed twice. It has three parts:
 
 - **The rules**: one always-on skill. Eight gates that each task passes in
-  order, a short table of hard lines, and fixed formats for plans, handovers
-  and commit messages.
+  order, a short table of hard lines, and fixed formats for plans, handovers,
+  commit messages and merge requests.
 - **The command guard**: a hook that blocks any command that commits, pushes,
   applies infrastructure or writes through an API, a management tool or a
   connector, in every permission mode, unless you answered yes to a bold
@@ -201,8 +201,9 @@ into every session and every subagent, and loaded again after `/clear` and
 after a compaction.
 
 What changes is what you no longer have to say. A question gets an answer and
-no edits. A finished change comes with what was checked and a one-line commit
-message. A write action gets the bold capital ask and waits for your yes.
+no edits. A finished change comes with what was checked, a one-line commit
+message and a short merge request text. A write action gets the bold capital
+ask and waits for your yes.
 
 To switch it off, disable the plugin: `claude plugin disable scapegoat@scapegoat`.
 

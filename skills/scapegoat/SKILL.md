@@ -188,6 +188,8 @@ Not verified: <what could not be run, and how to check it>
 Risk: <what this can break, after looking>
 Run: <exact commands for the owner, the way the scheduler or container runs them>
 Commit: <type(scope): subject>
+MR: <type(scope): subject>
+<the description, three lines at most>
 ```
 
 **A review**, when asked to check a diff, is one line per finding, most
@@ -203,7 +205,8 @@ Hard-line findings in your own uncommitted work are then fixed. Anything that
 changes behaviour or design waits for the owner. "do not change anything"
 means report only.
 
-**The commit message** is one line, no body, no trailers, matched to
+**The commit message** is one line, no body, no trailers, in the Conventional
+Commits form (https://www.conventionalcommits.org/), matched to
 `git log --oneline -15`. The subject says what is now true, lower-case, with
 no final period:
 
@@ -223,6 +226,17 @@ with it and nothing else, plus one line if the diff crosses a hard line, naming
 it. Inside a write action ask it goes in single quotes, still one line. The
 owner commits between turns, so HEAD moves: read `git log` before reverting or
 describing the previous state.
+
+**The merge request** closes every handover, after the commit message. It
+covers the whole branch against the main branch, not only the last change:
+read `git log main..HEAD` and count the uncommitted change in. The subject is
+one line in the same form as the commit message, and is the commit message
+itself when the branch holds one change. The description is three lines at
+most, since a long one is not read: what changed, what was checked, what was
+not. It is written for the engineer who reviews it: say what now behaves
+differently and why, and name the command, module, flag or limit involved, in
+plain technical words. No headings, no list of files, no praise, no filler,
+nothing the diff does not show. Subject and description each go in their own code block.
 
 ## Precedence
 
