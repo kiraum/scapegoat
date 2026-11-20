@@ -7,7 +7,7 @@ so the same correction is never typed twice. It has three parts:
 
 - **The rules**: one always-on skill. Eight gates that each task passes in
   order, a short table of hard lines, and fixed formats for plans, handovers,
-  commit messages and merge requests.
+  commit messages, merge requests and the changelog.
 - **The command guard**: a hook that blocks any command that commits, pushes,
   applies infrastructure or writes through an API, a management tool or a
   connector, in every permission mode, unless you answered yes to a bold
@@ -202,8 +202,8 @@ after a compaction.
 
 What changes is what you no longer have to say. A question gets an answer and
 no edits. A finished change comes with what was checked, a one-line commit
-message and a short merge request text. A write action gets the bold capital
-ask and waits for your yes.
+message, a short merge request text and the next tag to release. A write
+action gets the bold capital ask and waits for your yes.
 
 To switch it off, disable the plugin: `claude plugin disable scapegoat@scapegoat`.
 
@@ -263,5 +263,6 @@ hooks/guard.py                    the command guard
 hooks/edits.py                    the edit guard
 tests/                            unit tests for the guards and the wiring
 evals/                            behaviour cases for claude plugin eval
+CHANGELOG.md                      what changed, per tag and unreleased
 LICENSE                           GNU AGPL v3
 ```

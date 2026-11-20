@@ -190,6 +190,7 @@ Run: <exact commands for the owner, the way the scheduler or container runs them
 Commit: <type(scope): subject>
 MR: <type(scope): subject>
 <the description, three lines at most>
+Tag: <the next tag, should the owner want to release>
 ```
 
 **A review**, when asked to check a diff, is one line per finding, most
@@ -237,6 +238,35 @@ not. It is written for the engineer who reviews it: say what now behaves
 differently and why, and name the command, module, flag or limit involved, in
 plain technical words. No headings, no list of files, no praise, no filler,
 nothing the diff does not show. Subject and description each go in their own code block.
+
+**The changelog** is `CHANGELOG.md` at the repo root. A repo without one gets
+it with the first change that a user of the project would notice. A changelog
+that already exists keeps its own format. A new one is newest first: an
+`## Unreleased` section on top, then one section per released tag with its
+date:
+
+```
+## Unreleased
+- an empty query returns no rows instead of every row
+
+## v0.1 - 2026-03-02
+- search by customer name
+```
+
+One line per change, worded like a commit subject: what is now true, with no
+type prefix. It is written for the person who uses the project, who may not
+be an engineer: no module, function or file names, only what they type or see,
+such as a command or a flag. Only what a user would notice goes in: no
+refactor, no test, no chore. A removal or a breaking change says so in its first word. Nothing is
+logged that did not ship in the diff.
+
+**The tag** is suggested in every handover and never created: the owner tags.
+Read `git tag -l --sort=-v:refname`. With no tag yet, suggest `v0.1`.
+Otherwise keep the scheme the tags already use and raise its last number by
+one: `v0.1` gives `v0.2`, `v1.4.2` gives `v1.4.3`. A breaking change is named
+next to the suggestion, and the owner picks the number. When the owner says to
+release, the `Unreleased` entries move under a section for that tag with
+today's date, and `Unreleased` stays on top, empty.
 
 ## Precedence
 
