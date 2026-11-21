@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## v0.4.0 - 2026-11-21
 - a reply that edited a file and ends without a commit message and a tag is sent back once to add them
 - every reply that changed a file ends with a handover, a tag that waits for a release included, and a change to the README gets a changelog line
 - the README shows the image under the title and tagline
