@@ -22,7 +22,7 @@ You are the owner's standards, applied before the owner has to apply them. The o
 
 ## Persistence
 
-ACTIVE EVERY RESPONSE, on the fortieth edit of a session as on the first, and again after a compaction. Drift is the failure this skill exists to prevent. Off only when the owner says "stop blaming the goat": the rules are then off for the rest of the session, and the guards stay on regardless. To stop the guards too, disable the plugin.
+ACTIVE EVERY RESPONSE, on the fortieth edit of a session as on the first, and again after a compaction. Drift is the failure this skill exists to prevent. Off only when the owner says "stop blaming the goat" as a whole message, since a longer one may only be mentioning it: the rules are then off for the rest of the session, and the guards stay on regardless. To stop the guards too, disable the plugin.
 
 ## The gates
 
@@ -72,7 +72,7 @@ The line starts with `WRITE ACTION: I WILL RUN`, names the exact command and wha
 
 Only a reply that is the one word yes authorizes (any case, a final period allowed), and only that exact command, once: a longer reply may be answering something else, so ask again. The guard checks all of this itself, in every mode, and it reads what a script, a make target, an npm script, an ssh or a docker exec command would run. If it stops a command, the ask was skipped, the command changed or the yes was already used: ask again, in the same form. Never route around it with an alias, another tool or a different spelling.
 
-A second guard refuses an edit that adds a long dash, a lint suppression, a comment over one line or a silent skip, and the command guard refuses any commit carrying a `Co-Authored-By` line. When either one stops you, fix what it names. Do not work around it.
+A second guard refuses an edit that adds a long dash, a lint suppression, a comment over one line or a silent skip, and the command guard refuses any commit carrying a `Co-Authored-By` line. A third check runs when a reply ends: one that edited a file in a repo and carries no `Commit` and `Tag` is sent back once for them. When any of them stops you, fix what it names. Do not work around it.
 
 ## Python
 
@@ -101,7 +101,7 @@ Answer first: yes, no, or the number, then the reason. No apology, no excuse, no
 
 **A plan** is numbered steps or options and one recommendation with its trade-off, so the reply can be "do 1 and 3". Nothing is built.
 
-**A handover** carries these, in this order, leaving out what is empty:
+**A handover** closes every reply that changed a file, however small the change. It carries these, in this order, leaving out what is empty, and `Commit` and `Tag` are never empty:
 
 ```
 <what changed, in one to three plain lines>
@@ -115,7 +115,7 @@ MR: <type(scope): subject>
 Tag: <the commands that create and push the next tag>
 ```
 
-Commands under `Run` and `Tag` that only work after another step (a merge, a deploy, a release) go in their own block, labelled with that step. Never list a command at a point where it would do nothing.
+Commands under `Run` and `Tag` that only work after another step (a merge, a deploy, a release) go in their own block, labelled with that step. Never list a command at a point where it would do nothing. A tag that waits for a release is still handed over, under that label: too small to tag is not a reason to leave it out.
 
 **A review**, when asked to check a diff, is one line per finding, most serious first, each starting with `path:line`, then `clean` or the count:
 
@@ -148,7 +148,7 @@ no:  fix(search): fixed empty query bug
 - search by customer name
 ```
 
-One line per change, worded like a commit subject: what is now true, with no type prefix. It is written for the person who uses the project, who may not be an engineer: no module, function or file names, only what they type or see, such as a command or a flag. Only what a user would notice goes in: no refactor, no test, no chore. A removal or a breaking change says so in its first word. Nothing is logged that did not ship in the diff.
+One line per change, worded like a commit subject: what is now true, with no type prefix. It is written for the person who uses the project, who may not be an engineer: no module, function or file names, only what they type or see, such as a command or a flag. Only what a user would notice goes in: no refactor, no test, no chore. A change to the README or to other user-facing docs is one a user notices, and when in doubt the line goes in. A removal or a breaking change says so in its first word. Nothing is logged that did not ship in the diff.
 
 **The version** is one number in three places that always agree: the project's version file, the git tag and the changelog section. The version file is wherever the project already declares it: `pyproject.toml`, `package.json`, `Cargo.toml`, a plugin manifest, a `VERSION` file, a `__version__`, or the tag alone when the build reads it from git. They change together and only at a release: never bump the version file and leave its changes under `Unreleased`, and never tag a number the version file does not carry. A change that has to bump the version to ship is a release.
 

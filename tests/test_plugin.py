@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import unittest
 from collections.abc import Mapping
@@ -90,6 +91,21 @@ class PluginTest(unittest.TestCase):
         result = run_hook(hook_command("PreToolUse", "Bash|mcp__.*"), event, path="/nonexistent")
         self.assertEqual(result.returncode, 2)
         self.assertIn("python3 is not on the PATH", result.stderr)
+
+    def test_the_handover_check_runs_when_a_reply_ends_and_never_fails_closed(self) -> None:
+        """A check that blocked on its own failure would hold every reply, so without python3 the reply still ends."""
+        command = hook_command("Stop")
+        self.assertIn("hooks/handover.py", command)
+        result = run_hook(command, {"hook_event_name": "Stop"}, path="/nonexistent")
+        self.assertNotIn(result.returncode, (0, 2))
+
+    def test_the_phrase_that_stops_the_rules_is_the_same_everywhere(self) -> None:
+        """The rules name the phrase, so the README and the check that listens for it carry the same words."""
+        skill = (ROOT / "skills" / "scapegoat" / "SKILL.md").read_text(encoding="utf-8")
+        (phrase,) = re.findall(r'Off only when the owner says "([^"]+)"', skill)
+        for name in ("README.md", "hooks/handover.py"):
+            with self.subTest(file=name):
+                self.assertIn(phrase, (ROOT / name).read_text(encoding="utf-8"))
 
     def test_no_long_dash_in_the_repo(self) -> None:
         """The repo keeps its own rule: no long dashes in any text file."""

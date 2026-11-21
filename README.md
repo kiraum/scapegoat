@@ -1,14 +1,15 @@
-<p align="center"><img src=".claude-plugin/icon.png" alt="A black goat standing with arrows stuck in its sides" width="320"></p>
-
 # scapegoat
 
 Consistent code for Claude. Blame the goat for the nitpicks.
 
-A Claude Code plugin that holds every change to one standard, in any project, so the same correction is never typed twice. It has three parts:
+<p align="center"><img src=".claude-plugin/icon.png" alt="A black goat standing with arrows stuck in its sides" width="320"></p>
+
+A Claude Code plugin that holds every change to one standard, in any project, so the same correction is never typed twice. It has four parts:
 
 - **The rules**: one always-on skill. Eight gates that each task passes in order, a short table of hard lines, and fixed formats for plans, handovers, commit messages, merge requests and the changelog.
 - **The command guard**: a hook that blocks any command that commits, pushes, applies infrastructure or writes through an API, a management tool or a connector, in every permission mode, unless you answered yes to a bold capital ask for it.
 - **The edit guard**: a hook that refuses an edit that adds a long dash, a lint suppression, a comment over one line or a silent skip.
+- **The handover check**: a hook that sends a reply back, once, when it edited a file in a repo and ends without a commit message and a tag.
 
 The rules are one person's standard, written down, and they are fixed: the plugin has no settings, so a rule you disagree with is changed in a fork. The guards block, they do not warn. A write action waits for a yes you type, a headless or SDK session cannot give one, and without `python3` on the PATH every shell command, connector call and edit is refused. Read [the hard lines](#the-hard-lines) before you install it.
 
@@ -104,6 +105,18 @@ Before every `Edit`, `Write` and `NotebookEdit`, `hooks/edits.py` compares the n
 
 Only what the edit adds counts. Text that was already there is left alone.
 
+## The handover check
+
+The handover is the rule most easily dropped on a small change, so it is checked too. When Claude finishes a reply, `hooks/handover.py` looks at what that reply did. If it edited a file that git reports as changed and it does not carry both `Commit` and `Tag`, the reply is sent back with what is missing.
+
+- It asks once. A reply that was already sent back ends as it is, so the check cannot loop.
+- A reply that edited nothing is left alone, and so is one that edited only files outside a repo or files git ignores.
+- A reply that ends with a write action ask is left alone, since the ask has to be its last line.
+- `stop blaming the goat`, sent as a message of its own, switches it off with the rules. A longer message that mentions the phrase does not.
+- It never holds a reply because of its own failure: if it cannot run, or cannot read the transcript, the reply ends.
+
+What it cannot see: a file changed through a shell command, an edit made by a subagent, and an edit made before a message you sent while Claude was still working.
+
 ## What it reads, runs and sends
 
 Everything happens on your machine. The plugin sends nothing, fetches nothing, stores nothing and collects no data, so there is no privacy policy to link.
@@ -113,8 +126,9 @@ Everything happens on your machine. The plugin sends nothing, fetches nothing, s
 | `hooks/rules.py` | A session starts or resumes, after `/clear`, after a compaction, and when a subagent starts | The plugin's own `skills/scapegoat/SKILL.md` | Nothing |
 | `hooks/guard.py` | Before every shell command and every connector call | The call, the files the command would run (a shell script, `package.json`, a SQL file) and, for a write action, the session transcript | `make -n`, to read what a make target would run |
 | `hooks/edits.py` | Before every `Edit`, `Write` and `NotebookEdit` | The call and, for a `Write`, the file it replaces | Nothing |
+| `hooks/handover.py` | When Claude finishes a reply | The reply's text and the session transcript | `git status`, on each file the reply edited |
 
-The transcript is the file Claude Code keeps for the session. The command guard opens it only when a call is a write action, and looks for three things: the ask Claude made, the last message you typed, and the commands run since that message. The only output of a hook is the rules handed to Claude, or the message that says why a call was blocked.
+The transcript is the file Claude Code keeps for the session. The command guard opens it only when a call is a write action, and looks for three things: the ask Claude made, the last message you typed, and the commands run since that message. The handover check opens it when a reply ends, and looks for the files that reply edited and for the phrase that stops the rules. The only output of a hook is the rules handed to Claude, or the message that says why a call was blocked or a reply sent back.
 
 ## Install
 
@@ -172,7 +186,7 @@ From a local checkout, give `marketplace add` the path instead. After a plugin u
 
 ### What carries over
 
-The skill installs in both. The two guards are written against Claude Code: its tool names (`Bash`, `Edit`, `Write`) and its session transcript, where the typed yes is read. They are not tested on `agy` or `codex`, so there the hard lines rest on the written rule until they are.
+The skill installs in both. The two guards and the handover check are written against Claude Code: its tool names (`Bash`, `Edit`, `Write`) and its session transcript, where the typed yes is read. They are not tested on `agy` or `codex`, so there the hard lines rest on the written rule until they are.
 
 ## Use
 
@@ -180,7 +194,7 @@ There is nothing to invoke. Install it and work as usual: the rules are loaded i
 
 What changes is what you no longer have to say. A question gets an answer and no edits. A finished change comes with what was checked, a one-line commit message, a short merge request text and the next tag to release. A write action gets the bold capital ask and waits for your yes.
 
-To switch the rules off for the rest of a session, say `stop blaming the goat`. The two guards stay on. To switch everything off, disable the plugin: `claude plugin disable scapegoat@scapegoat`.
+To switch the rules off for the rest of a session, send `stop blaming the goat` as a message of its own. The handover check goes off with them, and the two guards stay on. To switch everything off, disable the plugin: `claude plugin disable scapegoat@scapegoat`.
 
 ### Examples
 
@@ -202,6 +216,7 @@ A blocked call always carries its reason, in the message the guard hands to Clau
 | `THAT YES WAS ALREADY USED ONCE` | A yes covers one run. Claude asks again. |
 | `NO TYPED MESSAGE IN THE TRANSCRIPT` | A headless or SDK session cannot authorize a write: run the command yourself. In an interactive session it means the transcript could not be read, or a Claude Code update changed it, so open an issue. |
 | An edit is refused | The message names what the edit added: a long dash, a lint suppression, a comment over one line or a silent skip. Claude fixes the edit and tries again. |
+| A reply is sent back for `Commit` and `Tag` | It edited a file in a repo and ended without them. Claude adds the handover and the reply ends. To work without it, send `stop blaming the goat` as a message of its own. |
 | A command that only reads is blocked, or a write runs without an ask | Open an issue with the command. A command blocked by mistake still runs after the ask and your yes. |
 
 ## Support
@@ -226,7 +241,7 @@ Installed copies are pinned to `version` in `.claude-plugin/plugin.json`, so a c
 
 ## Tests
 
-`tests/` holds the unit tests: every command the command guard flags or lets through, what counts as your yes, what the edit guard refuses, the hooks' exit codes, and the plugin's own wiring.
+`tests/` holds the unit tests: every command the command guard flags or lets through, what counts as your yes, what the edit guard refuses, what the handover check sends back, the hooks' exit codes, and the plugin's own wiring.
 
 `evals/` holds the behaviour cases. Each is a prompt and, where needed, a small git repo built by its `fixture.sh`, run with the plugin and without it. The difference between the two scores is what the plugin adds. Running them starts real Claude sessions, which use your plan.
 
@@ -256,7 +271,8 @@ hooks/hooks.json                  wires the hooks
 hooks/rules.py                    loads the rules into a session or a subagent
 hooks/guard.py                    the command guard
 hooks/edits.py                    the edit guard
-tests/                            unit tests for the guards and the wiring
+hooks/handover.py                 the handover check
+tests/                            unit tests for the hooks and the wiring
 evals/                            behaviour cases for claude plugin eval
 CHANGELOG.md                      what changed, per tag and unreleased
 LICENSE                           GNU AGPL v3
