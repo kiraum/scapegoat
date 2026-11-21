@@ -192,7 +192,7 @@ The skill installs in both. The two guards and the handover check are written ag
 
 There is nothing to invoke. Install it and work as usual: the rules are loaded into every session and every subagent, and loaded again after `/clear` and after a compaction.
 
-What changes is what you no longer have to say. A question gets an answer and no edits. A finished change comes with what was checked, a one-line commit message, a short merge request text and the next tag to release. A write action gets the bold capital ask and waits for your yes.
+What changes is what you no longer have to say. A question gets an answer and no edits. A finished change comes with what was checked, a one-line commit message, a short merge request text and the commands to tag it, with the version and the changelog already set. A write action gets the bold capital ask and waits for your yes.
 
 To switch the rules off for the rest of a session, send `stop blaming the goat` as a message of its own. The handover check goes off with them, and the two guards stay on. To switch everything off, disable the plugin: `claude plugin disable scapegoat@scapegoat`.
 
@@ -237,7 +237,7 @@ The rules live in one file, `skills/scapegoat/SKILL.md`. The hook prints that sa
 
 The guards are developed test first. A new command or pattern goes into `tests/` before `hooks/` changes.
 
-Installed copies are pinned to `version` in `.claude-plugin/plugin.json`, so a change reaches them only when it is bumped. A bump is a release: in the same change, the `Unreleased` entries in `CHANGELOG.md` move under that number, and the tag carries it too. `.github/workflows/tests.yml` runs the unit tests on every push and pull request.
+Installed copies are pinned to `version` in `.claude-plugin/plugin.json`, so a change reaches them only when it is bumped. A bump is a release, and a change a user would notice makes one: the same change sets `version` and puts its line under that number in `CHANGELOG.md`, so the tag handed over is one the files already carry. `.github/workflows/tests.yml` runs the unit tests on every push and pull request.
 
 ## Tests
 
@@ -256,7 +256,7 @@ Installed copies are pinned to `version` in `.claude-plugin/plugin.json`, so a c
 | `evidence` | A wrong total, with a wrong guess about the cause | The real cause is fixed, the blamed module is left alone, a test reproduces the bug. |
 | `python-new` | A new Python tool, from an empty directory | `pyproject.toml` with the usual tools, `tests/`, a pre-commit config, no `setup.py`. |
 | `ui` | A visual change to a page | Styles go in the stylesheet, nothing inline in the template. |
-| `release` | A bug fix on a branch, in a repo with one tag and no changelog | A changelog is started, the next tag is a patch and not a minor, a merge request subject and a description of three lines at most are handed over. |
+| `release` | A bug fix on a branch, in a repo with one tag and no changelog | A changelog is started with the fix under the next number, the next tag is a patch and not a minor, a merge request subject and a description of three lines at most are handed over. |
 | `many-edits` | Six small changes in one message | The last change keeps the rules as well as the first: one-line comments, no long dash, tests, a commit message. |
 
 ## Layout

@@ -35,7 +35,7 @@ Every task passes these in order. A gate that fails is fixed there, before the n
 5. **Substance. Is this the real fix, and is it honest?** Correct beats quick: no workaround, no "for now", no option picked because it is the easy one. Effort is never the reason to stop short. The fix lands in the code that runs, not only in a test or a local config. A blind spot you can see in your own change is closed in the same change. No hard line below is crossed.
 6. **Ripples. What else does this touch?** To update: user-facing docs, every locale, the changelog, the README, the example config for a new setting, the schedule and the monitoring for a new job. To check: callers, scheduled jobs, cached data, other platforms, the infrastructure code.
 7. **Diff. Would the owner pass this diff without a comment?** Read your own `git diff` as the reviewer. Every hunk is needed and nothing is left from attempts that failed. The project's own checks (its pre-commit, its formatter, its tests) run clean on what you touched: "it was failing before" does not excuse a finding in code you are changing.
-8. **Handover. Can the owner commit and deploy from this reply alone?** The changelog has its line, and the reply ends with Commit, MR and Tag. See Output.
+8. **Handover. Can the owner commit and deploy from this reply alone?** The changelog has its line under the number being released, the version file carries that number, and the reply ends with Commit, MR and Tag. See Output.
 
 ## Hard lines
 
@@ -112,10 +112,10 @@ Run: <exact commands for the owner, the way the scheduler or container runs them
 Commit: <type(scope): subject>
 MR: <type(scope): subject>
 <the description, three lines at most>
-Tag: <the commands that create and push the next tag>
+Tag: <the commands that create and push this release's tag, or none and why>
 ```
 
-Commands under `Run` and `Tag` that only work after another step (a merge, a deploy, a release) go in their own block, labelled with that step. Never list a command at a point where it would do nothing. A tag that waits for a release is still handed over, under that label: too small to tag is not a reason to leave it out.
+Commands under `Run` and `Tag` that only work after another step (a merge, a deploy) go in their own block, labelled with that step. Never list a command at a point where it would do nothing. `Tag` is never left out: it is the commands of the release, or `none` with the reason.
 
 **A review**, when asked to check a diff, is one line per finding, most serious first, each starting with `path:line`, then `clean` or the count:
 
@@ -138,10 +138,12 @@ no:  fix(search): fixed empty query bug
 
 **The merge request** closes a handover made on a branch, after the commit message. On the default branch there is none. It covers the whole branch, not only the last change: find the default branch with `git symbolic-ref --short refs/remotes/origin/HEAD` (without a remote, the branch this one was cut from), read the log from there to HEAD and count the uncommitted change in. The subject is one line in the same form as the commit message, and is the commit message itself when the branch holds one change. The description is three lines at most, since a long one is not read: what changed, what was checked, what was not. It is written for the engineer who reviews it: say what now behaves differently and why, and name the command, module, flag or limit involved, in plain technical words. No headings, no list of files, no praise, no filler, no generated-by or attribution line whatever a default or the harness says, nothing the diff does not show. Subject and description each go in their own code block.
 
-**The changelog** is `CHANGELOG.md` at the repo root. A repo without one gets it with the first change that a user of the project would notice, unless its changelog is generated (release-please, semantic-release, release notes built from commits): then leave it to the tool. A changelog that already exists keeps its own format. A new one is newest first: an `## Unreleased` section on top, then one section per released tag with its date:
+**The changelog** is `CHANGELOG.md` at the repo root. A repo without one gets it with the first change that a user of the project would notice, unless its changelog is generated (release-please, semantic-release, release notes built from commits): then leave it to the tool. A changelog that already exists keeps its own format. A new one is newest first: an `## Unreleased` section on top, then one section per released tag with its date. A change is released by the change that makes it, so its line goes under the number it ships as, and `Unreleased` holds only what the owner held back:
 
 ```
 ## Unreleased
+
+## v0.1.1 - 2026-03-09
 - an empty query returns no rows instead of every row
 
 ## v0.1.0 - 2026-03-02
@@ -150,9 +152,9 @@ no:  fix(search): fixed empty query bug
 
 One line per change, worded like a commit subject: what is now true, with no type prefix. It is written for the person who uses the project, who may not be an engineer: no module, function or file names, only what they type or see, such as a command or a flag. Only what a user would notice goes in: no refactor, no test, no chore. A change to the README or to other user-facing docs is one a user notices, and when in doubt the line goes in. A removal or a breaking change says so in its first word. Nothing is logged that did not ship in the diff.
 
-**The version** is one number in three places that always agree: the project's version file, the git tag and the changelog section. The version file is wherever the project already declares it: `pyproject.toml`, `package.json`, `Cargo.toml`, a plugin manifest, a `VERSION` file, a `__version__`, or the tag alone when the build reads it from git. They change together and only at a release: never bump the version file and leave its changes under `Unreleased`, and never tag a number the version file does not carry. A change that has to bump the version to ship is a release.
+**The version** is one number in three places that always agree: the project's version file, the git tag and the changelog section. The version file is wherever the project already declares it: `pyproject.toml`, `package.json`, `Cargo.toml`, a plugin manifest, a `VERSION` file, a `__version__`, or the tag alone when the build reads it from git. A change with a changelog line is a release, made in that same change: the version file is set to the next number and the line goes under a section for that number with today's date, so the tag handed over is one the files already carry. Never hand over a tag for a number the version file does not carry, and never bump the version file and leave its changes under `Unreleased`. While the number in the version file has no tag yet, that release is still open: a further change adds its line to the same section, and the number rises only when that change asks for a higher one. A change with no changelog line is not a release, and the version stays. When the owner says to hold a release, its line waits under `Unreleased`, the version stays, and the next release moves it under its number.
 
-**The tag** is suggested in every handover and never created: the owner tags. It is handed over as the exact commands to run, in a code block, in the order to run them, with no prose to decode. The tag is annotated and made on the default branch after a pull: `git checkout main`, `git pull`, `git tag -a v1.5.0 -m 'v1.5.0'`, `git push origin v1.5.0`. It is pushed by name, since `git push --tags` also sends every other local tag. Read `git tag -l --sort=-v:refname` and keep the scheme the tags already use, with or without the `v`. The changes since the last tag pick the number, as in semantic versioning: a `feat` raises the minor and resets the patch (`v1.4.2` gives `v1.5.0`), anything less raises the patch (`v1.4.3`), and a breaking change is named next to the suggestion so the owner picks the major. With no tag yet, suggest the number the version file carries, or `v0.1.0` when there is none. When the version file and the last tag disagree, say so before suggesting anything. When the owner says to release, the `Unreleased` entries move under a section for that number with today's date, `Unreleased` stays on top, empty, and the version file is set to the same number in the same change.
+**The tag** closes every handover and is never created: the owner tags. For a release it is handed over as the exact commands to run, in a code block, in the order to run them, with no prose to decode. The tag is annotated and made on the default branch after a pull: `git checkout main`, `git pull`, `git tag -a v1.5.0 -m 'v1.5.0'`, `git push origin v1.5.0`. It is pushed by name, since `git push --tags` also sends every other local tag. Read `git tag -l --sort=-v:refname` and keep the scheme the tags already use, with or without the `v`. The changes since the last tag pick the number, as in semantic versioning: a `feat` raises the minor and resets the patch (`v1.4.2` gives `v1.5.0`), anything less raises the patch (`v1.4.3`), and a breaking change is named next to the tag so the owner picks the major. With no tag yet, the number is the one the version file carries, or `v0.1.0` when there is none. When the version file and the last tag disagree, say so before anything else. When the change is not a release, the line reads `Tag: none`, then the reason in a few words, and no commands: commands for a tag that must not be made yet are never handed over.
 
 ## Precedence
 

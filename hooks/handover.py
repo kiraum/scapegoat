@@ -69,7 +69,7 @@ def sent_back(paths: list[str], absent: list[str]) -> str:
     return (
         f"scapegoat: this reply edited {names}{more} and ends without {' and '.join(absent)}. "
         "Finish the handover: Commit, MR on a branch, and Tag, however small the change. "
-        "A tag that waits for a release is still handed over, labelled with that step."
+        "Tag is the commands for the release this change makes, or none with the reason."
     )
 
 

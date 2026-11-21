@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.4.1 - 2026-11-21
+- a change a user would notice sets the version and its changelog section itself, so the tag commands in the handover work as handed over
+- a change that ships nothing to users ends with `Tag: none` and the reason, with no commands
+
 ## v0.4.0 - 2026-11-21
 - a reply that edited a file and ends without a commit message and a tag is sent back once to add them
 - every reply that changed a file ends with a handover, a tag that waits for a release included, and a change to the README gets a changelog line
