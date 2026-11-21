@@ -1,3 +1,5 @@
+<p align="center"><img src=".claude-plugin/icon.png" alt="A black goat standing with arrows stuck in its sides" width="320"></p>
+
 # scapegoat
 
 Consistent code for Claude. Blame the goat for the nitpicks.
@@ -247,7 +249,7 @@ Installed copies are pinned to `version` in `.claude-plugin/plugin.json`, so a c
 ```
 .claude-plugin/plugin.json        the plugin manifest
 .claude-plugin/marketplace.json   lets the repo be added as a marketplace
-.claude-plugin/icon.png           the icon for a directory listing
+.claude-plugin/icon.png           the icon, for a directory listing and the top of this page
 skills/scapegoat/SKILL.md         the rules
 hooks/hooks.json                  wires the hooks
 .github/workflows/tests.yml       runs the unit tests on push and pull request

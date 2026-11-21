@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## v0.3.2 - 2026-11-21
+- the README opens with the plugin's image
+
 ## v0.3.1 - 2026-11-21
 - saying `stop blaming the goat` switches the rules off for the rest of the session, and the two guards stay on
 - the README says what the plugin reads and runs, that it sends and stores nothing, what to do when a guard blocks and where to get help, with three example prompts
