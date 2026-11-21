@@ -1,11 +1,14 @@
 {
   "name": "scapegoat",
   "version": "0.2.0",
-  "description": "Consistent code for Claude. Eight gates, a short list of hard lines and a command guard, so the same nitpick is never said twice.",
+  "description": "Consistent code for Claude. Eight gates every task passes, hard lines such as test first and nothing silent, a guard that blocks commits, pushes, terraform apply and remote writes until you type yes, and a guard that refuses edits that cross a line, so the same nitpick is never said twice.",
   "author": {
     "name": "kiraum",
     "url": "https://github.com/kiraum"
   },
   "repository": "https://github.com/kiraum/scapegoat",
-  "license": "AGPL-3.0"
+  "license": "AGPL-3.0",
+  "icon": "./.claude-plugin/icon.png",
+  "documentationUrl": "https://github.com/kiraum/scapegoat#readme",
+  "supportUrl": "https://github.com/kiraum/scapegoat/issues"
 }

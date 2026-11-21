@@ -8,6 +8,8 @@ A Claude Code plugin that holds every change to one standard, in any project, so
 - **The command guard**: a hook that blocks any command that commits, pushes, applies infrastructure or writes through an API, a management tool or a connector, in every permission mode, unless you answered yes to a bold capital ask for it.
 - **The edit guard**: a hook that refuses an edit that adds a long dash, a lint suppression, a comment over one line or a silent skip.
 
+The rules are one person's standard, written down, and they are fixed: the plugin has no settings, so a rule you disagree with is changed in a fork. The guards block, they do not warn. A write action waits for a yes you type, a headless or SDK session cannot give one, and without `python3` on the PATH every shell command, connector call and edit is refused. Read [the hard lines](#the-hard-lines) before you install it.
+
 ## The gates
 
 | # | Gate | The question it asks |
@@ -100,6 +102,18 @@ Before every `Edit`, `Write` and `NotebookEdit`, `hooks/edits.py` compares the n
 
 Only what the edit adds counts. Text that was already there is left alone.
 
+## What it reads, runs and sends
+
+Everything happens on your machine. The plugin sends nothing, fetches nothing, stores nothing and collects no data, so there is no privacy policy to link.
+
+| Hook | When | Reads | Runs |
+|---|---|---|---|
+| `hooks/rules.py` | A session starts or resumes, after `/clear`, after a compaction, and when a subagent starts | The plugin's own `skills/scapegoat/SKILL.md` | Nothing |
+| `hooks/guard.py` | Before every shell command and every connector call | The call, the files the command would run (a shell script, `package.json`, a SQL file) and, for a write action, the session transcript | `make -n`, to read what a make target would run |
+| `hooks/edits.py` | Before every `Edit`, `Write` and `NotebookEdit` | The call and, for a `Write`, the file it replaces | Nothing |
+
+The transcript is the file Claude Code keeps for the session. The command guard opens it only when a call is a write action, and looks for three things: the ask Claude made, the last message you typed, and the commands run since that message. The only output of a hook is the rules handed to Claude, or the message that says why a call was blocked.
+
 ## Install
 
 In Claude Code, from GitHub:
@@ -166,6 +180,32 @@ What changes is what you no longer have to say. A question gets an answer and no
 
 To switch it off, disable the plugin: `claude plugin disable scapegoat@scapegoat`.
 
+### Examples
+
+| You type | What comes back |
+|---|---|
+| `commit msg?` | One line in the Conventional Commits form that says what is now true. Nothing is committed. |
+| `do a git diff and check carefully if the changes are good before I commit, do not change anything, just tell me` | One line per finding, most serious first, each starting with `path:line`. No file is edited. |
+| `looks good, commit it and push` | The bold capital ask for the exact command, or the commands handed over for you to run. Nothing is committed or pushed until you reply yes. |
+
+## Troubleshooting
+
+A blocked call always carries its reason, in the message the guard hands to Claude.
+
+| What happens | What to do |
+|---|---|
+| `python3 is not on the PATH`, on every command and edit | Install Python 3.9 or newer, or disable the plugin. A guard that cannot run blocks. |
+| `THE OWNER'S LAST MESSAGE IS NOT EXACTLY YES` | Reply to the ask with the one word yes. Anything longer does not count, and Claude asks again. |
+| `NO ASK FOR THIS EXACT COMMAND CAME BEFORE THE YES` | The command changed after the ask, or the ask was not in the bold capital form. Claude asks again for the command it will run. |
+| `THAT YES WAS ALREADY USED ONCE` | A yes covers one run. Claude asks again. |
+| `NO TYPED MESSAGE IN THE TRANSCRIPT` | A headless or SDK session cannot authorize a write: run the command yourself. In an interactive session it means the transcript could not be read, or a Claude Code update changed it, so open an issue. |
+| An edit is refused | The message names what the edit added: a long dash, a lint suppression, a comment over one line or a silent skip. Claude fixes the edit and tries again. |
+| A command that only reads is blocked, or a write runs without an ask | Open an issue with the command. A command blocked by mistake still runs after the ask and your yes. |
+
+## Support
+
+Questions and bug reports go to the [issue tracker](https://github.com/kiraum/scapegoat/issues). For a command the guard judged wrong, include the command and the message it printed.
+
 ## Development
 
 ```bash
@@ -207,6 +247,7 @@ Installed copies are pinned to `version` in `.claude-plugin/plugin.json`, so a c
 ```
 .claude-plugin/plugin.json        the plugin manifest
 .claude-plugin/marketplace.json   lets the repo be added as a marketplace
+.claude-plugin/icon.png           the icon for a directory listing
 skills/scapegoat/SKILL.md         the rules
 hooks/hooks.json                  wires the hooks
 .github/workflows/tests.yml       runs the unit tests on push and pull request
