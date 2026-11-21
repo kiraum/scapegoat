@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- saying stop scapegoat switches the rules off for the rest of the session, and the two guards stay on
 - the README says what the plugin reads and runs, that it sends and stores nothing, what to do when a guard blocks and where to get help, with three example prompts
 - the plugin's description names the two guards and what they block
 - the plugin has an icon for a directory listing

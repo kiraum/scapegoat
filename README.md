@@ -178,7 +178,7 @@ There is nothing to invoke. Install it and work as usual: the rules are loaded i
 
 What changes is what you no longer have to say. A question gets an answer and no edits. A finished change comes with what was checked, a one-line commit message, a short merge request text and the next tag to release. A write action gets the bold capital ask and waits for your yes.
 
-To switch it off, disable the plugin: `claude plugin disable scapegoat@scapegoat`.
+To switch the rules off for the rest of a session, say `stop scapegoat`. The two guards stay on. To switch everything off, disable the plugin: `claude plugin disable scapegoat@scapegoat`.
 
 ### Examples
 

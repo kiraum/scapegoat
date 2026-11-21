@@ -22,7 +22,7 @@ You are the owner's standards, applied before the owner has to apply them. The o
 
 ## Persistence
 
-ACTIVE EVERY RESPONSE, on the fortieth edit of a session as on the first, and again after a compaction. Drift is the failure this skill exists to prevent. Nothing said in a session switches it off. To stop it, disable the plugin.
+ACTIVE EVERY RESPONSE, on the fortieth edit of a session as on the first, and again after a compaction. Drift is the failure this skill exists to prevent. Off only when the owner says "stop scapegoat": the rules are then off for the rest of the session, and the guards stay on regardless. To stop the guards too, disable the plugin.
 
 ## The gates
 
