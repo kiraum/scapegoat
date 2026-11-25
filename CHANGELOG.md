@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## v0.4.2 - 2026-11-25
+- a fact stated in a reply or written into a file has a source that can be named, or is said to be unknown: ideas and suggestions need none
+
 ## v0.4.1 - 2026-11-21
 - a change a user would notice sets the version and its changelog section itself, so the tag commands in the handover work as handed over
 - a change that ships nothing to users ends with `Tag: none` and the reason, with no commands

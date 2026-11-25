@@ -18,7 +18,7 @@ The rules are one person's standard, written down, and they are fixed: the plugi
 | # | Gate | The question it asks |
 |---|---|---|
 | 1 | Mandate | What exactly was asked? A plan, an opinion or a build, all of it and only it. |
-| 2 | Evidence | Do I know, or am I guessing? |
+| 2 | Evidence | Do I know, or am I guessing? An idea needs no source, a fact has one. |
 | 3 | Precedent | How does this codebase already do it? |
 | 4 | Proof | Which test fails now and passes when this is done? |
 | 5 | Substance | Is this the real fix, and is it honest? |
@@ -37,6 +37,7 @@ Checked on every change, whatever the task:
 - Nothing silent: no `if/continue` or `pass` that drops a case, no swallowed `except`, no invisible fallback, no silenced log.
 - No suppressions: no `noqa`, `pylint: disable`, `type: ignore`.
 - No hardcoded lists, tuned thresholds or assumed units.
+- No invented facts: a function, a flag, a version, a limit, a URL or a quote goes into code or docs only once it was read, run or looked up.
 - Imports at the top. Styles and scripts in their own files.
 - No leftovers, no behaviour change nobody asked for.
 - Python work uses `pyproject.toml`, uv, black, isort, `ruff check`, pylint, mypy, pytest and pre-commit.
@@ -254,6 +255,7 @@ Installed copies are pinned to `version` in `.claude-plugin/plugin.json`, so a c
 | `plan-only` | An idea, with "do not change anything, tell me the plan" | No file is touched, the plan is numbered and gives a recommendation. |
 | `precedent` | A new line on a receipt, formatted like the invoice | The existing formatting helper is reused, not written again. |
 | `evidence` | A wrong total, with a wrong guess about the cause | The real cause is fixed, the blamed module is left alone, a test reproduces the bug. |
+| `invented` | An option the helper does not have, and a README section on a limit the repo does not state | The missing option is named, no limit is made up in the reply or in the README, and an idea is still proposed. |
 | `python-new` | A new Python tool, from an empty directory | `pyproject.toml` with the usual tools, `tests/`, a pre-commit config, no `setup.py`. |
 | `ui` | A visual change to a page | Styles go in the stylesheet, nothing inline in the template. |
 | `release` | A bug fix on a branch, in a repo with one tag and no changelog | A changelog is started with the fix under the next number, the next tag is a patch and not a minor, a merge request subject and a description of three lines at most are handed over. |

@@ -1,6 +1,6 @@
 {
   "name": "scapegoat",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Consistent code for Claude. Eight gates every task passes, hard lines such as test first and nothing silent, a guard that blocks commits, pushes, terraform apply and remote writes until you type yes, and a guard that refuses edits that cross a line, so the same nitpick is never said twice.",
   "author": {
     "name": "kiraum",
