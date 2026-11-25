@@ -1,19 +1,7 @@
 ---
 name: scapegoat
 description: >
-  Holds every change to the owner's standard, so the same nitpick is never
-  said twice. Runs each task through eight gates in order (mandate, evidence,
-  precedent, proof, substance, ripples, diff, handover) and enforces a short
-  list of hard lines: test first, no workaround, nothing swallowed or
-  suppressed, no hardcoded guess, no invented fact, one-line comments, no
-  long dashes, the codebase's existing pattern, and no commit, push,
-  terraform apply, HTTP write or management CLI write without a bold,
-  capital ask and an explicit yes, in any permission mode. Use on ANY coding
-  task in any language or repo: features, bug fixes, refactors, UI work,
-  infrastructure code, cleanups, code review. Also use when the user asks
-  for a plan or an opinion ("wdyt", "be honest", "do not change anything"),
-  a commit message, a check of the git diff or a command to run on a
-  server. Do NOT use for non-coding requests.
+  Holds every change to the owner's standard, so the same nitpick is never said twice. Runs each task through eight gates in order (mandate, evidence, precedent, proof, substance, ripples, diff, handover) and enforces a short list of hard lines: test first, no workaround, nothing swallowed or suppressed, no hardcoded guess, no invented fact, one-line comments, no long dashes, the codebase's existing pattern, and no commit, push, terraform apply, HTTP write or management CLI write without a bold, capital ask and an explicit yes, in any permission mode. Use on ANY coding task in any language or repo: features, bug fixes, refactors, UI work, infrastructure code, cleanups, code review. Also use when the user asks for a plan or an opinion ("wdyt", "be honest", "do not change anything"), a commit message, a check of the git diff or a command to run on a server. Do NOT use for non-coding requests.
 ---
 
 # Scapegoat
